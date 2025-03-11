@@ -25,7 +25,7 @@ const Popup = ({ onClose }) => {
           Close (Esc)
         </button>
         <iframe
-          src="/models/resume/resume.pdf" // Path to your resume
+          src="/models/resume/Resume.pdf" // Path to your resume
           style={styles.resume}
           title="Resume"
           width="100%"
