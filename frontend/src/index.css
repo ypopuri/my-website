@@ -1,0 +1,19 @@
+/* Reset default margin/padding and prevent scrolling */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  background-color: #333; /* Changed from black to a lighter dark gray */
+}
+
+/* Ensure the root container and canvas fill the screen */
+#root, canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
