@@ -8,6 +8,7 @@ import SkillPopup from './SkillPopup'; // Popup for the skills PDF
 import PdfPopup from './PdfPopup'; // Import the PDF popup component
 import WelcomeMessage from './WelcomeMessage';
 import BlurWelcomeMessage from './BlurWelcomeMessage';
+import InstructionsOverlay from './InstructionsOverlay'; // Import the new InstructionsOverlay component
 
 const GameScene = () => 
   {
@@ -25,6 +26,8 @@ const GameScene = () =>
     const [hasPlayedGuidRobotAudio, setHasPlayedGuidRobotAudio] = useState(false); // Track if the audio has played
     const guidRobotTargetPosition = new THREE.Vector3(-7, 2, -6); // Adjust this position to match the download1.glb position
     const hasPlayedGuidRobotAudio3 = useRef(false); // Track if the third audio has played
+    const [showInstructions, setShowInstructions] = useState(true); // State to control the visibility of instructions
+    
     
     const audioRef = useRef(null); // Ref to store the audio object
     const guidRobotRef = useRef(null); // Ref to store the guid_robot model
@@ -1416,6 +1419,10 @@ if (playerModel && linkedInModelRef.current) {
 
       {/* Blur Effect and Welcome Message */}
       <BlurWelcomeMessage showWelcomeMessage={showWelcomeMessage} /> {/* Use the new component */}
+
+       {/* Instructions Overlay */}
+    {showInstructions && <InstructionsOverlay />} {/* Ensure this is included */}
+
 
       {/* Popup Components */}
       {showPopup && <Popup onClose={() => setShowPopup(false)} />} {/* Popup for the first NPC */}
