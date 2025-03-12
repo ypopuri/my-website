@@ -11,11 +11,11 @@ const WelcomeMessage = () => {
         fontSize: '2rem',
         color: 'white',
         textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-        animation: 'fadeOut 2s forwards',
+        animation: 'fadeOut 3s forwards',
         zIndex: 1000, // Ensure the message is on top
       }}
     >
-      Welcome to the Yaswanth Park. press w to walk
+      Welcome to the Yaswanth Park. press w to start
       <style>
         {`
           @keyframes fadeOut {

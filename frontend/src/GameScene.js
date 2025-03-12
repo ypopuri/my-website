@@ -728,8 +728,8 @@ const GameScene = () =>
           console.log('Guid Robot model loaded successfully:', gltf);
       
           const guidRobotModel = gltf.scene;
-          guidRobotModel.position.set(2, 3, 20); // Position it 2 units to the right of the player's initial position
-          guidRobotModel.scale.set(1, 1, 1); // Adjust scale as needed
+          guidRobotModel.position.set(0, 3, 20); // Position it 2 units to the right of the player's initial position
+          guidRobotModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
           guidRobotModel.visible = false; // Hide it initially
           scene.add(guidRobotModel); // Add it to the scene
       
@@ -1225,7 +1225,7 @@ if (playerModel && guidRobotRef.current) {
   console.log("Distance to Guid Robot:", distanceToGuidRobot); // Debugging log
 
   // Play the second audio if the player is within 3 units of the guid_robot and the audio hasn't played yet
-  if (distanceToGuidRobot < 3 && audioRef2.current && audioRef2.current.paused && !hasPlayedGuidRobotAudioRef.current) {
+  if (distanceToGuidRobot < 5 && audioRef2.current && audioRef2.current.paused && !hasPlayedGuidRobotAudioRef.current) {
     audioRef2.current.play()
       .then(() => {
         console.log('Second audio playback started successfully!');
@@ -1348,7 +1348,7 @@ if (playerModel && linkedInModelRef.current) {
     console.log("Distance to Download Button:", distanceToDownloadButton); // Debugging log
 
     // Show the skill popup if the player is within 2 units of the download button and the PDF hasn't been opened yet
-    if (distanceToDownloadButton < 2 && !showSkillPopup && !hasOpenedSkillsPdf.current) {
+    if (distanceToDownloadButton < 4 && !showSkillPopup && !hasOpenedSkillsPdf.current) {
       setShowSkillPopup(true); // Show the skill popup
       hasOpenedSkillsPdf.current = true; // Mark the PDF as opened
     } else if (distanceToDownloadButton >= 2 && showSkillPopup) {
