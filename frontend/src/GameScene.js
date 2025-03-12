@@ -9,6 +9,7 @@ import PdfPopup from './PdfPopup'; // Import the PDF popup component
 import WelcomeMessage from './WelcomeMessage';
 import BlurWelcomeMessage from './BlurWelcomeMessage';
 import InstructionsOverlay from './InstructionsOverlay'; // Import the new InstructionsOverlay component
+import MobileControls from './MobileControls'; // Import the MobileControls component
 
 const GameScene = () => 
   {
@@ -27,6 +28,29 @@ const GameScene = () =>
     const guidRobotTargetPosition = new THREE.Vector3(-7, 2, -6); // Adjust this position to match the download1.glb position
     const hasPlayedGuidRobotAudio3 = useRef(false); // Track if the third audio has played
     const [showInstructions, setShowInstructions] = useState(true); // State to control the visibility of instructions
+    const [isMobile, setIsMobile] = useState(false); // State to check if the device is mobile
+    // Check if the device is mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    };
+    setIsMobile(checkIsMobile());
+  }, []);
+
+  // Handle joystick movement
+  const handleJoystickMove = (x, y) => {
+    const playerModel = playerModelRef.current;
+    if (playerModel) {
+      const moveSpeed = 0.1;
+      const direction = new THREE.Vector3(x, 0, -y).multiplyScalar(moveSpeed); // Invert y for correct movement
+      const newPosition = playerModel.position.clone().add(direction);
+
+      // Check for collisions before moving the player
+      if (!checkCollision(newPosition)) {
+        playerModel.position.copy(newPosition);
+      }
+    }
+  };
     
     
     const audioRef = useRef(null); // Ref to store the audio object
@@ -1422,8 +1446,6 @@ if (playerModel && linkedInModelRef.current) {
 
        {/* Instructions Overlay */}
     {showInstructions && <InstructionsOverlay />} {/* Ensure this is included */}
-
-
       {/* Popup Components */}
       {showPopup && <Popup onClose={() => setShowPopup(false)} />} {/* Popup for the first NPC */}
       {showSecondNpcPopup && (
