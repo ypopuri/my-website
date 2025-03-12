@@ -1446,6 +1446,9 @@ if (playerModel && linkedInModelRef.current) {
 
        {/* Instructions Overlay */}
     {showInstructions && <InstructionsOverlay />} {/* Ensure this is included */}
+    
+    {/* Mobile Controls */}
+    {isMobile && <MobileControls onMove={handleJoystickMove} />}
       {/* Popup Components */}
       {showPopup && <Popup onClose={() => setShowPopup(false)} />} {/* Popup for the first NPC */}
       {showSecondNpcPopup && (
