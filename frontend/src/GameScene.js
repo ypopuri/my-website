@@ -542,6 +542,92 @@ const GameScene = () =>
     scene.add(ambientLight);
 
     const loader = new GLTFLoader();
+    loader.load('/models/land1.glb', (gltf) => {
+      console.log('Land1 model loaded successfully:', gltf);
+  
+      const land1Model = gltf.scene;
+      land1Model.position.set(40, -4.1, 1); // Position at (0, 0, 30)
+      land1Model.scale.set(0.1, 0.1, 0.1); // Make it very small
+      land1Model.rotation.y = (3 * Math.PI) / 2; // (3 * Math.PI) / 2 radians = 270 degrees
+      scene.add(land1Model);
+  
+      console.log('Land1 model added to the scene:', land1Model);
+    }, undefined, (error) => {
+      console.error('Error loading land1 model:', error);
+    });
+
+    loader.load('/models/bridge.glb', (gltf) => {
+      console.log('Bridge model loaded successfully:', gltf);
+  
+      const bridgeModel = gltf.scene;
+      bridgeModel.position.set(30, -0.5, 1); // Adjust position as needed
+      bridgeModel.scale.set(1, 1, 1); // Adjust scale as needed
+      scene.add(bridgeModel);
+  
+      console.log('Bridge model added to the scene:', bridgeModel);
+    }, undefined, (error) => {
+      console.error('Error loading bridge model:', error);
+    });
+
+    // Load the land2.glb model
+loader.load('/models/land2.glb', (gltf) => {
+  console.log('Land2 model loaded successfully:', gltf);
+
+  const land2Model = gltf.scene;
+  land2Model.position.set(-38, 6, 0.5); // Position at (-40, -4.1, 1)
+  land2Model.scale.set(10, 10, 10); // Adjust scale as needed
+  
+  scene.add(land2Model);
+
+  console.log('Land2 model added to the scene:', land2Model);
+}, undefined, (error) => {
+  console.error('Error loading land2 model:', error);
+});
+
+
+// Load the bridge2.glb model
+loader.load('/models/bridge2.glb', (gltf) => {
+  console.log('Bridge2 model loaded successfully:', gltf);
+
+  const bridge2Model = gltf.scene;
+  bridge2Model.position.set(-27, -1.5, 0); // Position at (10, 0, 20)
+  bridge2Model.scale.set(2, 2, 1); // Scale down to half size
+  bridge2Model.rotation.y = Math.PI / 2; // Rotate 90 degrees
+  
+  scene.add(bridge2Model);
+
+  console.log('Bridge2 model added to the scene:', bridge2Model);
+}, undefined, (error) => {
+  console.error('Error loading bridge2 model:', error);
+});
+
+// Load the land3.glb model
+loader.load('/models/land3.glb', (gltf) => {
+  console.log('Land3 model loaded successfully:', gltf);
+
+  const land3Model = gltf.scene;
+  land3Model.position.set(0, 10, -70); // Adjust position as needed
+  land3Model.scale.set(5, 5, 5); // Adjust scale as needed
+  scene.add(land3Model);
+
+  console.log('Land3 model added to the scene:', land3Model);
+}, undefined, (error) => {
+  console.error('Error loading land3 model:', error);
+});
+
+// Load the bridge3.glb model
+loader.load('/models/bridge3.glb', (gltf) => {
+  console.log('Bridge3 model loaded successfully:', gltf);
+
+  const bridge3Model = gltf.scene;
+  bridge3Model.position.set(0, -6, -49.5); // Position at (20, 0, 30)
+  bridge3Model.scale.set(20, 20, 20); // Scale down to half size
+  scene.add(bridge3Model);
+
+  console.log('Bridge3 model added to the scene:', bridge3Model);
+}, undefined, (error) => {
+  console.error('Error loading bridge3 model:', error);
+});
 
     // Load the new 3D map (GLB)
     loader.load('/models/ancient-palace/sketchfab_new_sample_level.glb', (gltf) => {
@@ -588,6 +674,8 @@ const GameScene = () =>
       } else {
         console.warn("No animations found in the player model.");
       }
+
+      
 
       // Adjust camera position to match the player's new initial position
       camera.position.copy(playerModel.position).add(new THREE.Vector3(0, 4, -5));
