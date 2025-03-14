@@ -143,6 +143,8 @@ const GameScene = () =>
     // Ref to track if the second NPC popup has been triggered
     const hasSecondNpcPopupTriggered = useRef(false);
     const hasLinkedInRedirected = useRef(false);
+    const hasGitHubRedirected = useRef(false); // Track if GitHub redirection has happened
+    const githubModelRef = useRef(null); // Ref for the GitHub model
 
     // Refs for mouse and camera controls
     const isMouseActiveRef = useRef(false);
@@ -629,6 +631,8 @@ loader.load('/models/bridge3.glb', (gltf) => {
   console.error('Error loading bridge3 model:', error);
 });
 
+
+
     // Load the new 3D map (GLB)
     loader.load('/models/ancient-palace/sketchfab_new_sample_level.glb', (gltf) => {
       const map = gltf.scene;
@@ -674,8 +678,6 @@ loader.load('/models/bridge3.glb', (gltf) => {
       } else {
         console.warn("No animations found in the player model.");
       }
-
-      
 
       // Adjust camera position to match the player's new initial position
       camera.position.copy(playerModel.position).add(new THREE.Vector3(0, 4, -5));
@@ -1112,7 +1114,7 @@ loader.load('/models/bridge3.glb', (gltf) => {
         console.log('LinkedIn model loaded successfully:', gltf);
 
         const linkedInModel = gltf.scene;
-        linkedInModel.position.set(17, 0, 0); // Adjust position as needed
+        linkedInModel.position.set(16, 0, -3); // Adjust position as needed
         linkedInModel.scale.set(1, 1, 1); // Adjust scale as needed
         scene.add(linkedInModel);
         linkedInModelRef.current = linkedInModel; // Store the LinkedIn model reference
@@ -1121,6 +1123,26 @@ loader.load('/models/bridge3.glb', (gltf) => {
       }, undefined, (error) => {
         console.error('Error loading LinkedIn model:', error);
       });
+
+
+     
+
+      loader.load('/models/github.glb', (gltf) => {
+        console.log('GitHub model loaded successfully:', gltf);
+      
+        const githubModel = gltf.scene;
+        githubModel.position.set(16, 1, 3.5); // Position
+        githubModel.scale.set(1, 1, 1); // Adjust scale as needed
+        scene.add(githubModel);
+        githubModelRef.current = githubModel; // Store the GitHub model reference
+      
+        console.log('GitHub model added to the scene:', githubModel);
+      }, undefined, (error) => {
+        console.error('Error loading GitHub model:', error);
+      });
+
+
+
     });
 
     const keys = {};
@@ -1272,13 +1294,29 @@ loader.load('/models/bridge3.glb', (gltf) => {
         console.log('Animating LinkedIn model:', linkedInModel.position.y);
 
         // Move up and down slightly
-        linkedInModel.position.y = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.1;
+        linkedInModel.position.y = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.3;
 
         // Rotate slowly
-        linkedInModel.rotation.y += delta * 0.1;
+        linkedInModel.rotation.y += delta * 0.4;
       } else {
         console.error('LinkedIn model not found!');
       }
+
+      // Animate the GitHub model
+const githubModel = githubModelRef.current;
+if (githubModel) {
+  console.log('Animating GitHub model:', githubModel.position.y);
+
+  // Move up and down slightly
+  githubModel.position.y = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.3;
+
+  // Rotate slowly
+  githubModel.rotation.y += delta * 0.4;
+} else {
+  console.error('GitHub model not found!');
+}
+
+      
 
       const playerModel = playerModelRef.current;
       const npcModel = npcModelRef.current;
@@ -1454,6 +1492,34 @@ if (playerModel && linkedInModelRef.current) {
 
     // Open LinkedIn in a new tab
     window.open('https://www.linkedin.com/in/yaswanth-popuri-975aa6160', '_blank');
+  }
+}
+
+// Check if player is near the GitHub model
+if (playerModel && githubModelRef.current) {
+  const distanceToGitHub = playerModel.position.distanceTo(githubModelRef.current.position);
+  console.log("Distance to GitHub model:", distanceToGitHub); // Debugging log
+
+  // Redirect to GitHub profile if the player is within 2 units of the GitHub model
+  if (distanceToGitHub < 2 && !hasGitHubRedirected.current) {
+    hasGitHubRedirected.current = true; // Mark the redirection as done
+
+    // Reset all movement keys
+    keys['w'] = false;
+    keys['a'] = false;
+    keys['s'] = false;
+    keys['d'] = false;
+
+    // Pause the player's walk animation
+    if (playerMixerRef.current) {
+      const walkAction = playerMixerRef.current._actions[0];
+      if (walkAction) {
+        walkAction.paused = true; // Pause the walk animation
+      }
+    }
+
+    // Open GitHub in a new tab
+    window.open('https://github.com/ypopuri', '_blank');
   }
 }
 
