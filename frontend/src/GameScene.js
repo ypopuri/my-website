@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { TextureLoader } from 'three'; // Use TextureLoader for JPEG
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { Howl } from 'howler';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -29,6 +31,11 @@ const GameScene = () =>
     const hasPlayedGuidRobotAudio3 = useRef(false); // Track if the third audio has played
     const [showInstructions, setShowInstructions] = useState(true); // State to control the visibility of instructions
     const [isMobile, setIsMobile] = useState(false); // State to check if the device is mobile
+    const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
+    const sceneRef = useRef(null); // Use useRef for scene
+const cameraRef = useRef(null); // Use useRef for camera
+const rendererRef = useRef(null); // Use useRef for renderer
+    const [isLoading, setIsLoading] = useState(true); // Track if loading is complete
     // Check if the device is mobile
   useEffect(() => {
     const checkIsMobile = () => {
@@ -515,33 +522,64 @@ const GameScene = () =>
   
 
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.5,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x333333);
-    renderer.domElement.style.position = "absolute";
-    renderer.domElement.style.top = "0";
-    renderer.domElement.style.left = "0";
-    renderer.domElement.style.width = "100%";
-    renderer.domElement.style.height = "100%";
+    // Create the scene
+  const scene = new THREE.Scene();
+  sceneRef.current = scene; // Assign the scene to sceneRef
 
-    if (mountRef.current) {
-      mountRef.current.appendChild(renderer.domElement);
+  // Create the camera
+  const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.5,
+    1000
+  );
+  cameraRef.current = camera;
+
+     // Create the renderer
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x333333);
+  renderer.domElement.style.position = "absolute";
+  renderer.domElement.style.top = "0";
+  renderer.domElement.style.left = "0";
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+
+  if (mountRef.current) {
+    mountRef.current.appendChild(renderer.domElement);
+  }
+
+
+
+    
+
+// Load the JPEG environment map
+const textureLoader = new TextureLoader();
+textureLoader.load(
+  '/models/ancient-palace/hdri-anime-pure-sky-panorama-v/HDR_Anime_Pure_Sky (33).jpg',
+  (texture) => {
+    // Ensure sceneRef.current is not null
+    if (sceneRef.current) {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      sceneRef.current.background = texture; // Set the background
+      sceneRef.current.environment = texture; // Set the environment map for reflections
+    } else {
+      console.error('Scene is not initialized!');
     }
+  },
+  undefined,
+  (error) => {
+    console.error('Error loading JPEG environment map:', error);
+  }
+);
 
     // Add directional light
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 10, 5).normalize();
-    scene.add(light);
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 5).normalize();
+  scene.add(light);
 
-    const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
-    scene.add(ambientLight);
+  const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+  scene.add(ambientLight);
 
     const loader = new GLTFLoader();
     loader.load('/models/land1.glb', (gltf) => {
@@ -1565,15 +1603,12 @@ if (playerModel && githubModelRef.current) {
 
     // Cleanup on unmount
     return () => {
-
-
-    console.log('Component unmounted'); // Debugging log
-    clearTimeout(showTimer);
-    clearTimeout(hideTimer);
-
-      
-      if (mountRef.current) {
-        mountRef.current.removeChild(renderer.domElement);
+      console.log('Component unmounted'); // Debugging log
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    
+      if (mountRef.current && rendererRef.current) {
+        mountRef.current.removeChild(rendererRef.current.domElement);
       }
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
@@ -1583,8 +1618,8 @@ if (playerModel && githubModelRef.current) {
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current); // Use animationFrameId.current
       }
-
-      if (document.pointerLockElement === renderer.domElement) {
+    
+      if (document.pointerLockElement === rendererRef.current?.domElement) {
         document.exitPointerLock();
       }
     };
