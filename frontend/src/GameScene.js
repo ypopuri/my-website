@@ -12,31 +12,47 @@ import WelcomeMessage from './WelcomeMessage';
 import BlurWelcomeMessage from './BlurWelcomeMessage';
 import InstructionsOverlay from './InstructionsOverlay'; // Import the new InstructionsOverlay component
 import MobileControls from './MobileControls'; // Import the MobileControls component
+import LoadingScreen from './LoadingScreen'; // Import the LoadingScreen component
 
-const GameScene = () => 
-  {
-    const mountRef = useRef(null);
-    const [showPopup, setShowPopup] = useState(false); // For the first NPC
-    const [showSecondNpcPopup, setShowSecondNpcPopup] = useState(false); // For the second NPC
-    const [showSkillPopup, setShowSkillPopup] = useState(false); // For the skills PDF
-    const [showProjectPopup, setShowProjectPopup] = useState(false); // For the project PDF popup
-    const [showPdfPopup, setShowPdfPopup] = useState(false); // For the PDF popup
-    const hasOpenedProjectsPdf = useRef(false); // Track if projects PDF has been opened
-    const hasOpenedSkillsPdf = useRef(false); // Track if skills PDF has been opened
-    const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
-    const audioRef2 = useRef(null); // Ref to store the second audio object
-    const audioRef3 = useRef(null); // Ref to store the third audio object
-    const [hasPlayedGuidRobotAudio, setHasPlayedGuidRobotAudio] = useState(false); // Track if the audio has played
-    const guidRobotTargetPosition = new THREE.Vector3(-7, 2, -6); // Adjust this position to match the download1.glb position
-    const hasPlayedGuidRobotAudio3 = useRef(false); // Track if the third audio has played
-    const [showInstructions, setShowInstructions] = useState(true); // State to control the visibility of instructions
-    const [isMobile, setIsMobile] = useState(false); // State to check if the device is mobile
-    const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
-    const sceneRef = useRef(null); // Use useRef for scene
-const cameraRef = useRef(null); // Use useRef for camera
-const rendererRef = useRef(null); // Use useRef for renderer
-    const [isLoading, setIsLoading] = useState(true); // Track if loading is complete
-    // Check if the device is mobile
+const GameScene = () => {
+  const mountRef = useRef(null);
+  const [showPopup, setShowPopup] = useState(false); // For the first NPC
+  const [showSecondNpcPopup, setShowSecondNpcPopup] = useState(false); // For the second NPC
+  const [showSkillPopup, setShowSkillPopup] = useState(false); // For the skills PDF
+  const [showProjectPopup, setShowProjectPopup] = useState(false); // For the project PDF popup
+  const [showPdfPopup, setShowPdfPopup] = useState(false); // For the PDF popup
+  const hasOpenedProjectsPdf = useRef(false); // Track if projects PDF has been opened
+  const hasOpenedSkillsPdf = useRef(false); // Track if skills PDF has been opened
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  const audioRef2 = useRef(null); // Ref to store the second audio object
+  const audioRef3 = useRef(null); // Ref to store the third audio object
+  const [hasPlayedGuidRobotAudio, setHasPlayedGuidRobotAudio] = useState(false); // Track if the audio has played
+  const guidRobotTargetPosition = new THREE.Vector3(-7, 2, -6); // Adjust this position to match the download1.glb position
+  const hasPlayedGuidRobotAudio3 = useRef(false); // Track if the third audio has played
+  const [showInstructions, setShowInstructions] = useState(true); // State to control the visibility of instructions
+  const [isMobile, setIsMobile] = useState(false); // State to check if the device is mobile
+  const sceneRef = useRef(null); // Use useRef for scene
+  const cameraRef = useRef(null); // Use useRef for camera
+  const rendererRef = useRef(null); // Use useRef for renderer
+
+  const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
+  const [isLoading, setIsLoading] = useState(true); // Track if loading is complete
+
+  // Loading Manager to track asset loading progress
+  const loadingManager = new THREE.LoadingManager(
+    () => {
+      console.log('All assets loaded');
+      setIsLoading(false); // Hide loading screen when all assets are loaded
+    },
+    (item, loaded, total) => {
+      const progress = (loaded / total) * 100;
+      setLoadingProgress(progress); // Update loading progress
+    }
+  );
+
+  const loader = new GLTFLoader(loadingManager); // Use the loading manager
+
+  // Check if the device is mobile
   useEffect(() => {
     const checkIsMobile = () => {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -58,312 +74,274 @@ const rendererRef = useRef(null); // Use useRef for renderer
       }
     }
   };
-    
-    
-    const audioRef = useRef(null); // Ref to store the audio object
-    const guidRobotRef = useRef(null); // Ref to store the guid_robot model
-    const [isGuidRobotVisible, setIsGuidRobotVisible] = useState(false); // State to track visibility
 
-    const [audio, setAudio] = useState(null); // State to hold the audio object
-    // Add the audio initialization useEffect here
-    useEffect(() => 
-      {
-        const sound = new Audio('/models/voice/Intro_guide_robot.mp4');
-        sound.preload = 'auto';
-        sound.volume = 1.0;
-    
-        sound.addEventListener('canplaythrough', () => 
-          {
-            console.log('Audio is ready to play!');
-            audioRef.current = sound; // Store the audio object in a ref
-          });
-    
-        sound.addEventListener('error', (error) => 
-          {
-            console.error('Error loading audio:', error);
-          });
-    
-        return () => 
-          {
-            if (sound)
-              {
-                sound.pause();
-                sound.removeAttribute('src');
-                sound.load();
-              }
-          };
-      }, []);
+  const audioRef = useRef(null); // Ref to store the audio object
+  const guidRobotRef = useRef(null); // Ref to store the guid_robot model
+  const [isGuidRobotVisible, setIsGuidRobotVisible] = useState(false); // State to track visibility
 
-    useEffect(() => 
-      {
-        const sound = new Audio('/models/voice/Intro02_guide_robot.mp4');
-        sound.preload = 'auto';
-        sound.volume = 1.0;
-    
-        sound.addEventListener('canplaythrough', () => 
-          {
-            console.log('Second audio is ready to play!');
-            audioRef2.current = sound; // Store the audio object in a ref
-          });
-  
-        sound.addEventListener('error', (error) => 
-          {
-            console.error('Error loading second audio:', error);
-          });
-    
-        return () => 
-          {
-            if (sound) 
-              {
-                sound.pause();
-                sound.removeAttribute('src');
-                sound.load();
-              }
-          };
-      }, []);
+  const [audio, setAudio] = useState(null); // State to hold the audio object
+  // Add the audio initialization useEffect here
+  useEffect(() => {
+    const sound = new Audio('/models/voice/Intro_guide_robot.mp4');
+    sound.preload = 'auto';
+    sound.volume = 1.0;
 
-    useEffect(() => 
-      {
-        const sound = new Audio('/models/voice/Intro03_guide_robot.mp4');
-        sound.preload = 'auto';
-        sound.volume = 1.0;
-        sound.addEventListener('canplaythrough', () => 
-          {
-            console.log('Third audio is ready to play!');
-            audioRef3.current = sound; // Store the audio object in a ref
-          });
-        sound.addEventListener('error', (error) => 
-          {
-            console.error('Error loading third audio:', error);
-          });
-        return () => 
-          {
-            if (sound) 
-              {
-                sound.pause();
-                sound.removeAttribute('src');
-                sound.load();
-              }
-          };
-      }, []);
+    sound.addEventListener('canplaythrough', () => {
+      console.log('Audio is ready to play!');
+      audioRef.current = sound; // Store the audio object in a ref
+    });
 
-    // Ref to track if the second NPC popup has been triggered
-    const hasSecondNpcPopupTriggered = useRef(false);
-    const hasLinkedInRedirected = useRef(false);
-    const hasGitHubRedirected = useRef(false); // Track if GitHub redirection has happened
-    const githubModelRef = useRef(null); // Ref for the GitHub model
+    sound.addEventListener('error', (error) => {
+      console.error('Error loading audio:', error);
+    });
 
-    // Refs for mouse and camera controls
-    const isMouseActiveRef = useRef(false);
-    const cameraYawRef = useRef(0);
-    const cameraPitchRef = useRef(0);
+    return () => {
+      if (sound) {
+        sound.pause();
+        sound.removeAttribute('src');
+        sound.load();
+      }
+    };
+  }, []);
 
-    // Refs for player and NPC models
-    const playerModelRef = useRef(null);
-    const npcModelRef = useRef(null);
-    const newNpcModelRef = useRef(null); // Ref for the second NPC model
-    const arrowModelRef = useRef(null); // Ref for the arrow model
-    const downloadButtonModelRef = useRef(null); // Ref for the download button model
-    const displayRobotModelRef = useRef(null); // Ref for the new display_robot model
-    const linkedInModelRef = useRef(null); // Ref for the LinkedIn model
+  useEffect(() => {
+    const sound = new Audio('/models/voice/Intro02_guide_robot.mp4');
+    sound.preload = 'auto';
+    sound.volume = 1.0;
 
-    // Refs for animations
-    const playerMixerRef = useRef(null);
-    const npcMixerRef = useRef(null);
-    const newNpcMixerRef = useRef(null); // Ref for the second NPC's mixer
-    const arrowMixerRef = useRef(null); // Ref for the arrow's mixer
-    const displayRobotMixerRef = useRef(null); // Ref for the display_robot's mixer
-    const npcIdleActionRef = useRef(null);
-    const npcActionActionRef = useRef(null);
-    const npcWalkActionRef = useRef(null);
-    const npcThirdActionRef = useRef(null);
-    const newNpcBackwalkActionRef = useRef(null); // Ref for the backwalk animation
-    const arrowAnimationRef = useRef(null); // Ref for the arrow animation
-    const guidRobotModelRef = useRef(null); // Ref for the guid_robot model
-    const guidRobotMixerRef = useRef(null); // Ref for the guid_robot's mixer
+    sound.addEventListener('canplaythrough', () => {
+      console.log('Second audio is ready to play!');
+      audioRef2.current = sound; // Store the audio object in a ref
+    });
 
-    // Refs for screen models
-    const screenModelRef = useRef(null); // Ref for the first screen model
-    const screen02ModelRef = useRef(null); // Ref for the second screen model
+    sound.addEventListener('error', (error) => {
+      console.error('Error loading second audio:', error);
+    });
 
-    // Ref for collision boundaries
-    const collisionBoundariesRef = useRef([]);
+    return () => {
+      if (sound) {
+        sound.pause();
+        sound.removeAttribute('src');
+        sound.load();
+      }
+    };
+  }, []);
 
-    // Ref for animation frame ID
-    const animationFrameId = useRef(null);
+  useEffect(() => {
+    const sound = new Audio('/models/voice/Intro03_guide_robot.mp4');
+    sound.preload = 'auto';
+    sound.volume = 1.0;
+    sound.addEventListener('canplaythrough', () => {
+      console.log('Third audio is ready to play!');
+      audioRef3.current = sound; // Store the audio object in a ref
+    });
+    sound.addEventListener('error', (error) => {
+      console.error('Error loading third audio:', error);
+    });
+    return () => {
+      if (sound) {
+        sound.pause();
+        sound.removeAttribute('src');
+        sound.load();
+      }
+    };
+  }, []);
 
-    // Track if the NPC has played the action animation
-    const hasPlayedActionAnimation = useRef(false);
-    const hasPlayedGuidRobotAudioRef = useRef(false);
+  // Ref to track if the second NPC popup has been triggered
+  const hasSecondNpcPopupTriggered = useRef(false);
+  const hasLinkedInRedirected = useRef(false);
+  const hasGitHubRedirected = useRef(false); // Track if GitHub redirection has happened
+  const githubModelRef = useRef(null); // Ref for the GitHub model
 
-    // Track if the NPC has moved to the target position
-    const hasMovedToTarget = useRef(false);
+  // Refs for mouse and camera controls
+  const isMouseActiveRef = useRef(false);
+  const cameraYawRef = useRef(0);
+  const cameraPitchRef = useRef(0);
 
-    // Track if the NPC has played the third animation
-    const hasPlayedThirdAnimation = useRef(false);
+  // Refs for player and NPC models
+  const playerModelRef = useRef(null);
+  const npcModelRef = useRef(null);
+  const newNpcModelRef = useRef(null); // Ref for the second NPC model
+  const arrowModelRef = useRef(null); // Ref for the arrow model
+  const downloadButtonModelRef = useRef(null); // Ref for the download button model
+  const displayRobotModelRef = useRef(null); // Ref for the new display_robot model
+  const linkedInModelRef = useRef(null); // Ref for the LinkedIn model
 
-    // Track if the screen has risen
-    const hasScreenRisen = useRef(false);
+  // Refs for animations
+  const playerMixerRef = useRef(null);
+  const npcMixerRef = useRef(null);
+  const newNpcMixerRef = useRef(null); // Ref for the second NPC's mixer
+  const arrowMixerRef = useRef(null); // Ref for the arrow's mixer
+  const displayRobotMixerRef = useRef(null); // Ref for the display_robot's mixer
+  const npcIdleActionRef = useRef(null);
+  const npcActionActionRef = useRef(null);
+  const npcWalkActionRef = useRef(null);
+  const npcThirdActionRef = useRef(null);
+  const newNpcBackwalkActionRef = useRef(null); // Ref for the backwalk animation
+  const arrowAnimationRef = useRef(null); // Ref for the arrow animation
+  const guidRobotModelRef = useRef(null); // Ref for the guid_robot model
+  const guidRobotMixerRef = useRef(null); // Ref for the guid_robot's mixer
 
-    // Track if the second screen has risen
-    const hasScreen02Risen = useRef(false);
+  // Refs for screen models
+  const screenModelRef = useRef(null); // Ref for the first screen model
+  const screen02ModelRef = useRef(null); // Ref for the second screen model
 
-    // Define the target position for the first NPC
-    const targetPosition = new THREE.Vector3(3, 0, 11); // Example target position
+  // Ref for collision boundaries
+  const collisionBoundariesRef = useRef([]);
 
-    // Define the target position for the second NPC
-    const secondNpcTargetPosition = new THREE.Vector3(3.5, 0, -24.5); // Example target position
+  // Ref for animation frame ID
+  const animationFrameId = useRef(null);
 
-    const flyingRobotsModelRef = useRef(null); // Ref for the flying_robots model
-    const flyingRobotsMixerRef = useRef(null); // Ref for the flying_robots's mixer
-    const flyingRobotsPath = 
-    [
-      new THREE.Vector3(-30, 6, 31), // Initial position
-      new THREE.Vector3(-30, 6, -31), // Second position
-      new THREE.Vector3(30, 6, -31), // Third position
-      new THREE.Vector3(31, 6, 30), // Fourth position
-    ];
+  // Track if the NPC has played the action animation
+  const hasPlayedActionAnimation = useRef(false);
+  const hasPlayedGuidRobotAudioRef = useRef(false);
 
-    // Clock for animations
-    const clock = new THREE.Clock();
+  // Track if the NPC has moved to the target position
+  const hasMovedToTarget = useRef(false);
 
-    // Function to check for collisions
-    const checkCollision = (newPosition) => 
-      {
-        const playerBbox = new THREE.Box3().setFromObject(playerModelRef.current);
-        playerBbox.translate(newPosition.clone().sub(playerModelRef.current.position));
-        for (const boundary of collisionBoundariesRef.current) 
-          {
-            if (playerBbox.intersectsBox(boundary)) 
-              {
-                console.log("Collision detected with boundary:", boundary);
-                return true; // Collision detected
-              }
-          }
-        return false; // No collision
+  // Track if the NPC has played the third animation
+  const hasPlayedThirdAnimation = useRef(false);
+
+  // Track if the screen has risen
+  const hasScreenRisen = useRef(false);
+
+  // Track if the second screen has risen
+  const hasScreen02Risen = useRef(false);
+
+  // Define the target position for the first NPC
+  const targetPosition = new THREE.Vector3(3, 0, 11); // Example target position
+
+  // Define the target position for the second NPC
+  const secondNpcTargetPosition = new THREE.Vector3(3.5, 0, -24.5); // Example target position
+
+  const flyingRobotsModelRef = useRef(null); // Ref for the flying_robots model
+  const flyingRobotsMixerRef = useRef(null); // Ref for the flying_robots's mixer
+  const flyingRobotsPath = [
+    new THREE.Vector3(-30, 6, 31), // Initial position
+    new THREE.Vector3(-30, 6, -31), // Second position
+    new THREE.Vector3(30, 6, -31), // Third position
+    new THREE.Vector3(31, 6, 30), // Fourth position
+  ];
+
+  // Clock for animations
+  const clock = new THREE.Clock();
+
+  // Function to check for collisions
+  const checkCollision = (newPosition) => {
+    const playerBbox = new THREE.Box3().setFromObject(playerModelRef.current);
+    playerBbox.translate(newPosition.clone().sub(playerModelRef.current.position));
+    for (const boundary of collisionBoundariesRef.current) {
+      if (playerBbox.intersectsBox(boundary)) {
+        console.log("Collision detected with boundary:", boundary);
+        return true; // Collision detected
+      }
+    }
+    return false; // No collision
+  };
+
+  // Function to move the flying robots along the square path
+  const moveFlyingRobots = () => {
+    const flyingRobotsModel = flyingRobotsModelRef.current;
+    if (!flyingRobotsModel) return;
+    let currentTargetIndex = 0; // Start at the first position
+    const moveDuration = 10; // Duration of movement between points in seconds
+    const moveToNextTarget = () => {
+      const startTime = clock.getElapsedTime();
+      const startPosition = flyingRobotsModel.position.clone();
+      const targetPosition = flyingRobotsPath[currentTargetIndex];
+      const move = () => {
+        const elapsedTime = clock.getElapsedTime() - startTime;
+        const progress = Math.min(elapsedTime / moveDuration, 1);
+
+        // Interpolate the position
+        flyingRobotsModel.position.lerpVectors(startPosition, targetPosition, progress);
+
+        if (progress < 1) {
+          requestAnimationFrame(move); // Continue moving until the target is reached
+        } else {
+          console.log(`Reached target position ${currentTargetIndex + 1}`);
+
+          // Rotate the model 90 degrees at each corner
+          flyingRobotsModel.rotation.y += Math.PI / 2; // 90 degrees in radians
+
+          // Move to the next target
+          currentTargetIndex = (currentTargetIndex + 1) % flyingRobotsPath.length; // Loop back to the start
+          moveToNextTarget(); // Move to the next position
+        }
       };
+      move(); // Start moving to the next target
+    };
+    moveToNextTarget(); // Start the movement
+  };
 
+  // Function to make the first screen rise from the ground
+  const riseScreen = () => {
+    const screenModel = screenModelRef.current;
+    if (!screenModel) {
+      console.error('Screen model is not loaded!');
+      return;
+    }
+    console.log('Rising screen...');
+    const targetY = 13; // Target Y position (ground level)
+    const startY = -5; // Start Y position (below ground)
+    const riseDuration = 1; // Duration of the rise animation in seconds
+    const startTime = clock.getElapsedTime();
 
-    // Function to move the flying robots along the square path
-    const moveFlyingRobots = () => 
-      {
-        const flyingRobotsModel = flyingRobotsModelRef.current;
-        if (!flyingRobotsModel) return;
-        let currentTargetIndex = 0; // Start at the first position
-        const moveDuration = 10; // Duration of movement between points in seconds
-        const moveToNextTarget = () => 
-          {
-            const startTime = clock.getElapsedTime();
-            const startPosition = flyingRobotsModel.position.clone();
-            const targetPosition = flyingRobotsPath[currentTargetIndex];
-            const move = () => 
-              {
-                const elapsedTime = clock.getElapsedTime() - startTime;
-                const progress = Math.min(elapsedTime / moveDuration, 1);
+    screenModel.position.y = startY; // Start below the ground
 
-                // Interpolate the position
-                flyingRobotsModel.position.lerpVectors(startPosition, targetPosition, progress);
+    const animateRise = () => {
+      const elapsedTime = clock.getElapsedTime() - startTime;
+      const progress = Math.min(elapsedTime / riseDuration, 1);
+      // Interpolate the Y position
+      screenModel.position.y = THREE.MathUtils.lerp(startY, targetY, progress);
+      console.log('Screen model Y position:', screenModel.position.y);
+      if (progress < 1) {
+        requestAnimationFrame(animateRise);
+      } else {
+        console.log('Screen has fully risen!');
+        hasScreenRisen.current = true;
+        // Show the download button after the screen has risen
+        const downloadButtonModel = downloadButtonModelRef.current;
+        if (downloadButtonModel) {
+          downloadButtonModel.visible = true; // Make the button visible
+          console.log('Download button is now visible');
+        }
+        // Check if both screens have risen
+        if (hasScreenRisen.current && hasScreen02Risen.current) {
+          showDownloadButton();
+        }
+        // Check if both screens have risen
+        if (hasScreenRisen.current && hasScreen02Risen.current) {
+          moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
+        }
+      }
+    };
+    animateRise();
+  };
 
-                if (progress < 1) 
-                  {
-                    requestAnimationFrame(move); // Continue moving until the target is reached
-                  } else {
-                    console.log(`Reached target position ${currentTargetIndex + 1}`);
+  // Function to make the second screen rise from the ground
+  const riseScreen02 = () => {
+    const screen02Model = screen02ModelRef.current;
+    if (!screen02Model) {
+      console.error('Second screen model is not loaded!');
+      return;
+    }
 
-                    // Rotate the model 90 degrees at each corner
-                    flyingRobotsModel.rotation.y += Math.PI / 2; // 90 degrees in radians
-
-                    // Move to the next target
-                    currentTargetIndex = (currentTargetIndex + 1) % flyingRobotsPath.length; // Loop back to the start
-                    moveToNextTarget(); // Move to the next position
-                  }
-                };
-              move(); // Start moving to the next target
-          };
-        moveToNextTarget(); // Start the movement
-      };
-
-    // Function to make the first screen rise from the ground
-    const riseScreen = () => 
-      {
-        const screenModel = screenModelRef.current;
-        if (!screenModel) 
-          {
-            console.error('Screen model is not loaded!');
-            return;
-          }
-        console.log('Rising screen...');
-        const targetY = 13; // Target Y position (ground level)
-        const startY = -5; // Start Y position (below ground)
-        const riseDuration = 1; // Duration of the rise animation in seconds
-        const startTime = clock.getElapsedTime();
-
-        screenModel.position.y = startY; // Start below the ground
-
-        const animateRise = () => 
-          {
-            const elapsedTime = clock.getElapsedTime() - startTime;
-            const progress = Math.min(elapsedTime / riseDuration, 1);
-            // Interpolate the Y position
-            screenModel.position.y = THREE.MathUtils.lerp(startY, targetY, progress);
-            console.log('Screen model Y position:', screenModel.position.y);
-            if (progress < 1) 
-              {
-                requestAnimationFrame(animateRise);
-              }
-              else 
-              {
-                console.log('Screen has fully risen!');
-                hasScreenRisen.current = true;
-                // Show the download button after the screen has risen
-                const downloadButtonModel = downloadButtonModelRef.current;
-                if (downloadButtonModel) 
-                  {
-                    downloadButtonModel.visible = true; // Make the button visible
-                    console.log('Download button is now visible');
-                  }
-                // Check if both screens have risen
-                if (hasScreenRisen.current && hasScreen02Risen.current) 
-                  {
-                    showDownloadButton();
-                  }
-                // Check if both screens have risen
-                if (hasScreenRisen.current && hasScreen02Risen.current) 
-                  {
-                    moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
-                  }
-              }
-          };
-        animateRise();
-      };
-
-    // Function to make the second screen rise from the ground
-    const riseScreen02 = () => 
-      {
-        const screen02Model = screen02ModelRef.current;
-        if (!screen02Model) 
-          {
-            console.error('Second screen model is not loaded!');
-            return;
-          }
-
-        console.log('Rising second screen...');
-        const targetY = 10; // Target Y position (ground level)
-        const startY = -5; // Start Y position (below ground)
-        const riseDuration = 1; // Duration of the rise animation in seconds
-        const startTime = clock.getElapsedTime();
-        screen02Model.position.y = startY; // Start below the ground
-        const animateRise = () => 
-          {
-            const elapsedTime = clock.getElapsedTime() - startTime;
-            const progress = Math.min(elapsedTime / riseDuration, 1);
-            // Interpolate the Y position
-            screen02Model.position.y = THREE.MathUtils.lerp(startY, targetY, progress);
-            console.log('Second screen model Y position:', screen02Model.position.y);
-            if (progress < 1) 
-              {
-                requestAnimationFrame(animateRise);
-              } else {
+    console.log('Rising second screen...');
+    const targetY = 10; // Target Y position (ground level)
+    const startY = -5; // Start Y position (below ground)
+    const riseDuration = 1; // Duration of the rise animation in seconds
+    const startTime = clock.getElapsedTime();
+    screen02Model.position.y = startY; // Start below the ground
+    const animateRise = () => {
+      const elapsedTime = clock.getElapsedTime() - startTime;
+      const progress = Math.min(elapsedTime / riseDuration, 1);
+      // Interpolate the Y position
+      screen02Model.position.y = THREE.MathUtils.lerp(startY, targetY, progress);
+      console.log('Second screen model Y position:', screen02Model.position.y);
+      if (progress < 1) {
+        requestAnimationFrame(animateRise);
+      } else {
         console.log('Second screen has fully risen!');
         hasScreen02Risen.current = true;
 
@@ -379,38 +357,31 @@ const rendererRef = useRef(null); // Use useRef for renderer
           showDownloadButton();
         }
         // Check if both screens have risen
-      if (hasScreenRisen.current && hasScreen02Risen.current) {
-        moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
-      }
+        if (hasScreenRisen.current && hasScreen02Risen.current) {
+          moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
+        }
       }
     };
-
     animateRise();
   };
-
 
   const moveGuidRobotToDownloadButton = () => {
     const guidRobotModel = guidRobotRef.current;
     if (!guidRobotModel) return;
-  
     guidRobotModel.visible = true; // Ensure the guid_robot is visible
     console.log('Guid Robot is now visible!');
-  
     const moveDuration = 5; // Duration of movement in seconds
     const startTime = clock.getElapsedTime();
-  
     const move = () => {
       const elapsedTime = clock.getElapsedTime() - startTime;
       const progress = Math.min(elapsedTime / moveDuration, 1);
-  
       // Interpolate the position
       guidRobotModel.position.lerp(guidRobotTargetPosition, progress);
-  
       if (guidRobotModel.position.distanceTo(guidRobotTargetPosition) > 0.1) {
         requestAnimationFrame(move); // Continue moving until the target is reached
       } else {
         console.log('Guid Robot has reached the download button!');
-  
+
         // Play the third audio if it hasn't played yet
         if (audioRef3.current && audioRef3.current.paused && !hasPlayedGuidRobotAudio3.current) {
           audioRef3.current.play()
@@ -424,7 +395,6 @@ const rendererRef = useRef(null); // Use useRef for renderer
         }
       }
     };
-  
     move(); // Start moving
   };
 
@@ -506,251 +476,195 @@ const rendererRef = useRef(null); // Use useRef for renderer
   };
 
   useEffect(() => {
-    
     console.log('Component mounted'); // Debugging log
+    const showTimer = setTimeout(() => {
+      console.log('Showing welcome message'); // Debugging log
+      setShowWelcomeMessage(true); // Show the welcome message
+    }, 4000);
 
-  const showTimer = setTimeout(() => {
-    console.log('Showing welcome message'); // Debugging log
-    setShowWelcomeMessage(true); // Show the welcome message
-  }, 4000);
-
-  const hideTimer = setTimeout(() => {
-    console.log('Hiding welcome message'); // Debugging log
-    setShowWelcomeMessage(false); // Hide the welcome message
-  }, 6000);
-
-  
-
+    const hideTimer = setTimeout(() => {
+      console.log('Hiding welcome message'); // Debugging log
+      setShowWelcomeMessage(false); // Hide the welcome message
+    }, 6000);
 
     // Create the scene
-  const scene = new THREE.Scene();
-  sceneRef.current = scene; // Assign the scene to sceneRef
+    const scene = new THREE.Scene();
+    sceneRef.current = scene; // Assign the scene to sceneRef
 
-  // Create the camera
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.5,
-    1000
-  );
-  cameraRef.current = camera;
+    // Create the camera
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.5,
+      1000
+    );
+    cameraRef.current = camera;
 
-     // Create the renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x333333);
-  renderer.domElement.style.position = "absolute";
-  renderer.domElement.style.top = "0";
-  renderer.domElement.style.left = "0";
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
+    // Create the renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x333333);
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.top = "0";
+    renderer.domElement.style.left = "0";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
 
-  if (mountRef.current) {
-    mountRef.current.appendChild(renderer.domElement);
-  }
-
-
-
-    
-
-// Load the JPEG environment map
-const textureLoader = new TextureLoader();
-textureLoader.load(
-  '/models/ancient-palace/hdri-anime-pure-sky-panorama-v/HDR_Anime_Pure_Sky (33).jpg',
-  (texture) => {
-    // Ensure sceneRef.current is not null
-    if (sceneRef.current) {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      sceneRef.current.background = texture; // Set the background
-      sceneRef.current.environment = texture; // Set the environment map for reflections
-    } else {
-      console.error('Scene is not initialized!');
+    if (mountRef.current) {
+      mountRef.current.appendChild(renderer.domElement);
     }
-  },
-  undefined,
-  (error) => {
-    console.error('Error loading JPEG environment map:', error);
-  }
-);
+
+    // Load the JPEG environment map
+    const textureLoader = new TextureLoader();
+    textureLoader.load(
+      '/models/ancient-palace/hdri-anime-pure-sky-panorama-v/HDR_Anime_Pure_Sky (33).jpg',
+      (texture) => {
+        // Ensure sceneRef.current is not null
+        if (sceneRef.current) {
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          sceneRef.current.background = texture; // Set the background
+          sceneRef.current.environment = texture; // Set the environment map for reflections
+        } else {
+          console.error('Scene is not initialized!');
+        }
+      },
+      undefined,
+      (error) => {
+        console.error('Error loading JPEG environment map:', error);
+      }
+    );
 
     // Add directional light
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(5, 10, 5).normalize();
-  scene.add(light);
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 10, 5).normalize();
+    scene.add(light);
 
-  const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
-  scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+    scene.add(ambientLight);
 
-    const loader = new GLTFLoader();
-    loader.load('/models/land1.glb', (gltf) => {
-      console.log('Land1 model loaded successfully:', gltf);
-  
-      const land1Model = gltf.scene;
-      land1Model.position.set(40, -4.1, 1); // Position at (0, 0, 30)
-      land1Model.scale.set(0.1, 0.1, 0.1); // Make it very small
-      land1Model.rotation.y = (3 * Math.PI) / 2; // (3 * Math.PI) / 2 radians = 270 degrees
-      scene.add(land1Model);
-  
-      console.log('Land1 model added to the scene:', land1Model);
-    }, undefined, (error) => {
-      console.error('Error loading land1 model:', error);
-    });
+    // Load all assets
+    const loadAssets = async () => {
+      try {
+        // Load land1.glb
+        const land1 = await loader.loadAsync('/models/land1.glb');
+        const land1Model = land1.scene;
+        land1Model.position.set(40, -4.1, 1);
+        land1Model.scale.set(0.1, 0.1, 0.1);
+        land1Model.rotation.y = (3 * Math.PI) / 2;
+        scene.add(land1Model);
 
-    loader.load('/models/bridge.glb', (gltf) => {
-      console.log('Bridge model loaded successfully:', gltf);
-  
-      const bridgeModel = gltf.scene;
-      bridgeModel.position.set(30, -0.5, 1); // Adjust position as needed
-      bridgeModel.scale.set(1, 1, 1); // Adjust scale as needed
-      scene.add(bridgeModel);
-  
-      console.log('Bridge model added to the scene:', bridgeModel);
-    }, undefined, (error) => {
-      console.error('Error loading bridge model:', error);
-    });
+        // Load bridge.glb
+        const bridge = await loader.loadAsync('/models/bridge.glb');
+        const bridgeModel = bridge.scene;
+        bridgeModel.position.set(30, -0.5, 1);
+        bridgeModel.scale.set(1, 1, 1);
+        scene.add(bridgeModel);
 
-    // Load the land2.glb model
-loader.load('/models/land2.glb', (gltf) => {
-  console.log('Land2 model loaded successfully:', gltf);
+        // Load land2.glb
+        const land2 = await loader.loadAsync('/models/land2.glb');
+        const land2Model = land2.scene;
+        land2Model.position.set(-38, 6, 0.5);
+        land2Model.scale.set(10, 10, 10);
+        scene.add(land2Model);
 
-  const land2Model = gltf.scene;
-  land2Model.position.set(-38, 6, 0.5); // Position at (-40, -4.1, 1)
-  land2Model.scale.set(10, 10, 10); // Adjust scale as needed
-  
-  scene.add(land2Model);
+        // Load bridge2.glb
+        const bridge2 = await loader.loadAsync('/models/bridge2.glb');
+        const bridge2Model = bridge2.scene;
+        bridge2Model.position.set(-27, -1.5, 0);
+        bridge2Model.scale.set(2, 2, 1);
+        bridge2Model.rotation.y = Math.PI / 2;
+        scene.add(bridge2Model);
 
-  console.log('Land2 model added to the scene:', land2Model);
-}, undefined, (error) => {
-  console.error('Error loading land2 model:', error);
-});
+        // Load land3.glb
+        const land3 = await loader.loadAsync('/models/land3.glb');
+        const land3Model = land3.scene;
+        land3Model.position.set(0, 10, -70);
+        land3Model.scale.set(5, 5, 5);
+        scene.add(land3Model);
 
+        // Load bridge3.glb
+        const bridge3 = await loader.loadAsync('/models/bridge3.glb');
+        const bridge3Model = bridge3.scene;
+        bridge3Model.position.set(0, -6, -49.5);
+        bridge3Model.scale.set(20, 20, 20);
+        scene.add(bridge3Model);
 
-// Load the bridge2.glb model
-loader.load('/models/bridge2.glb', (gltf) => {
-  console.log('Bridge2 model loaded successfully:', gltf);
+        // Load the new 3D map (GLB)
+        const map = await loader.loadAsync('/models/ancient-palace/sketchfab_new_sample_level.glb');
+        const mapModel = map.scene;
+        mapModel.scale.set(1, 1, 1);
+        mapModel.position.set(0, 0, 0);
+        scene.add(mapModel);
 
-  const bridge2Model = gltf.scene;
-  bridge2Model.position.set(-27, -1.5, 0); // Position at (10, 0, 20)
-  bridge2Model.scale.set(2, 2, 1); // Scale down to half size
-  bridge2Model.rotation.y = Math.PI / 2; // Rotate 90 degrees
-  
-  scene.add(bridge2Model);
-
-  console.log('Bridge2 model added to the scene:', bridge2Model);
-}, undefined, (error) => {
-  console.error('Error loading bridge2 model:', error);
-});
-
-// Load the land3.glb model
-loader.load('/models/land3.glb', (gltf) => {
-  console.log('Land3 model loaded successfully:', gltf);
-
-  const land3Model = gltf.scene;
-  land3Model.position.set(0, 10, -70); // Adjust position as needed
-  land3Model.scale.set(5, 5, 5); // Adjust scale as needed
-  scene.add(land3Model);
-
-  console.log('Land3 model added to the scene:', land3Model);
-}, undefined, (error) => {
-  console.error('Error loading land3 model:', error);
-});
-
-// Load the bridge3.glb model
-loader.load('/models/bridge3.glb', (gltf) => {
-  console.log('Bridge3 model loaded successfully:', gltf);
-
-  const bridge3Model = gltf.scene;
-  bridge3Model.position.set(0, -6, -49.5); // Position at (20, 0, 30)
-  bridge3Model.scale.set(20, 20, 20); // Scale down to half size
-  scene.add(bridge3Model);
-
-  console.log('Bridge3 model added to the scene:', bridge3Model);
-}, undefined, (error) => {
-  console.error('Error loading bridge3 model:', error);
-});
-
-
-
-    // Load the new 3D map (GLB)
-    loader.load('/models/ancient-palace/sketchfab_new_sample_level.glb', (gltf) => {
-      const map = gltf.scene;
-      map.scale.set(1, 1, 1);
-      map.position.set(0, 0, 0);
-      scene.add(map);
-
-      // Traverse the map to find walls and stairs and add collision boundaries
-      map.traverse((child) => {
-        if (child.isMesh) {
-          // Check if the mesh is a wall or stair (adjust naming convention as needed)
-          if (child.name.toLowerCase().includes("wall") || child.name.toLowerCase().includes("stair")) {
-            const bbox = new THREE.Box3().setFromObject(child);
-            collisionBoundariesRef.current.push(bbox); // Add wall/stair to collision boundaries
-            console.log("Added collision boundary for:", child.name, bbox);
+        // Traverse the map to find walls and stairs and add collision boundaries
+        mapModel.traverse((child) => {
+          if (child.isMesh) {
+            // Check if the mesh is a wall or stair (adjust naming convention as needed)
+            if (child.name.toLowerCase().includes("wall") || child.name.toLowerCase().includes("stair")) {
+              const bbox = new THREE.Box3().setFromObject(child);
+              collisionBoundariesRef.current.push(bbox); // Add wall/stair to collision boundaries
+              console.log("Added collision boundary for:", child.name, bbox);
+            }
           }
+        });
+
+        console.log('Map loaded successfully:', mapModel);
+
+        // Load Player Model
+        const player = await loader.loadAsync('/models/character.glb');
+        const playerModel = player.scene;
+        const bbox = new THREE.Box3().setFromObject(playerModel);
+        playerModel.position.y = -bbox.min.y + 0.02;
+        playerModel.position.z = 36; // Move the player back along the Z-axis
+        playerModel.position.x = -1;
+        playerModel.scale.set(0.8, 0.8, 0.8); // Adjusted scale to make the player shorter
+        scene.add(playerModel);
+
+        // Set up player animations
+        playerMixerRef.current = new THREE.AnimationMixer(playerModel);
+
+        if (player.animations && player.animations.length > 0) {
+          const walkClip = player.animations[0];
+          const walkAction = playerMixerRef.current.clipAction(walkClip);
+          walkAction.play();
+          walkAction.paused = true;
+        } else {
+          console.warn("No animations found in the player model.");
         }
-      });
 
-      console.log('Map loaded successfully:', map);
-    }, undefined, (error) => {
-      console.error('Error loading map:', error);
-    });
+        // Adjust camera position to match the player's new initial position
+        camera.position.copy(playerModel.position).add(new THREE.Vector3(0, 4, -5));
+        camera.lookAt(playerModel.position);
 
-    // Load Player Model
-    loader.load('/models/character.glb', (gltf) => {
-      const playerModel = gltf.scene;
-      const bbox = new THREE.Box3().setFromObject(playerModel);
-      playerModel.position.y = -bbox.min.y + 0.02;
-      playerModel.position.z = 36; // Move the player back along the Z-axis
-      playerModel.position.x = -1;
-      playerModel.scale.set(0.8, 0.8, 0.8); // Adjusted scale to make the player shorter
-      scene.add(playerModel);
+        playerModelRef.current = playerModel;
 
-      // Set up player animations
-      playerMixerRef.current = new THREE.AnimationMixer(playerModel);
-
-      if (gltf.animations && gltf.animations.length > 0) {
-        const walkClip = gltf.animations[0];
-        const walkAction = playerMixerRef.current.clipAction(walkClip);
-        walkAction.play();
-        walkAction.paused = true;
-      } else {
-        console.warn("No animations found in the player model.");
-      }
-
-      // Adjust camera position to match the player's new initial position
-      camera.position.copy(playerModel.position).add(new THREE.Vector3(0, 4, -5));
-      camera.lookAt(playerModel.position);
-
-      playerModelRef.current = playerModel;
-
-      // Load NPC Idle Animation (character2.glb)
-      loader.load('/models/character2.glb', (gltf) => {
-        const npcModel = gltf.scene;
+        // Load NPC Idle Animation (character2.glb)
+        const npc = await loader.loadAsync('/models/character2.glb');
+        const npcModel = npc.scene;
         npcModel.position.set(-4, 0, 5); // Adjusted position: closer to the player and to the right
         npcModel.scale.set(2, 2, 2); // Adjusted scale to make the NPC shorter
-        const bbox = new THREE.Box3().setFromObject(npcModel);
-        npcModel.position.y = -bbox.min.y + 0.02;
+        const npcBbox = new THREE.Box3().setFromObject(npcModel);
+        npcModel.position.y = -npcBbox.min.y + 0.02;
         npcModel.rotation.y = Math.PI;
         scene.add(npcModel);
 
         npcMixerRef.current = new THREE.AnimationMixer(npcModel);
 
-        if (gltf.animations && gltf.animations.length > 0) {
-          const idleClip = gltf.animations[0];
+        if (npc.animations && npc.animations.length > 0) {
+          const idleClip = npc.animations[0];
           npcIdleActionRef.current = npcMixerRef.current.clipAction(idleClip);
           npcIdleActionRef.current.play(); // Play the idle animation
 
           // Load NPC Walking Animation (character2_walking_animation.glb)
-          loader.load('/models/character2_walking_animation.glb', (gltf) => {
-            if (gltf.animations && gltf.animations.length > 0) {
-              const walkClip = gltf.animations[0];
-              npcWalkActionRef.current = npcMixerRef.current.clipAction(walkClip);
-              npcWalkActionRef.current.setLoop(THREE.LoopRepeat); // Loop the walking animation
-              npcWalkActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
-            } else {
-              console.warn("No walking animation found in the NPC walking model.");
-            }
-          });
+          const npcWalk = await loader.loadAsync('/models/character2_walking_animation.glb');
+          if (npcWalk.animations && npcWalk.animations.length > 0) {
+            const walkClip = npcWalk.animations[0];
+            npcWalkActionRef.current = npcMixerRef.current.clipAction(walkClip);
+            npcWalkActionRef.current.setLoop(THREE.LoopRepeat); // Loop the walking animation
+            npcWalkActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
+          } else {
+            console.warn("No walking animation found in the NPC walking model.");
+          }
         } else {
           console.warn("No animations found in the NPC idle model.");
         }
@@ -758,64 +672,59 @@ loader.load('/models/bridge3.glb', (gltf) => {
         npcModelRef.current = npcModel;
 
         // Load NPC Action Animation (character2_animation2.glb)
-        loader.load('/models/character2_animation2.glb', (gltf) => {
-          if (gltf.animations && gltf.animations.length > 0) {
-            const actionClip = gltf.animations[0];
-            npcActionActionRef.current = npcMixerRef.current.clipAction(actionClip);
-            npcActionActionRef.current.setLoop(THREE.LoopOnce); // Play the action animation once
-            npcActionActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
+        const npcAction = await loader.loadAsync('/models/character2_animation2.glb');
+        if (npcAction.animations && npcAction.animations.length > 0) {
+          const actionClip = npcAction.animations[0];
+          npcActionActionRef.current = npcMixerRef.current.clipAction(actionClip);
+          npcActionActionRef.current.setLoop(THREE.LoopOnce); // Play the action animation once
+          npcActionActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
 
-            // Add an event listener for when the action animation finishes
-            npcMixerRef.current.addEventListener('finished', (e) => {
-              if (e.action === npcActionActionRef.current) {
-                console.log("2nd animation finished");
+          // Add an event listener for when the action animation finishes
+          npcMixerRef.current.addEventListener('finished', (e) => {
+            if (e.action === npcActionActionRef.current) {
+              console.log("2nd animation finished");
 
-                // Check if the player is near the NPC
-                const playerModel = playerModelRef.current;
-                const npcModel = npcModelRef.current;
-                if (playerModel && npcModel) {
-                  const distance = playerModel.position.distanceTo(npcModel.position);
-                  if (distance < 3) { // Adjust the distance threshold as needed
-                    // Show the popup 1.5 seconds before the animation ends
-                    const animationDuration = npcActionActionRef.current.getClip().duration;
-                    setTimeout(() => {
-                      setShowPopup(true); // Show the popup 1.5 seconds before the animation ends
-                    }, (animationDuration - 15) * 1000); // Convert to milliseconds
-                  }
+              // Check if the player is near the NPC
+              const playerModel = playerModelRef.current;
+              const npcModel = npcModelRef.current;
+              if (playerModel && npcModel) {
+                const distance = playerModel.position.distanceTo(npcModel.position);
+                if (distance < 3) { // Adjust the distance threshold as needed
+                  // Show the popup 1.5 seconds before the animation ends
+                  const animationDuration = npcActionActionRef.current.getClip().duration;
+                  setTimeout(() => {
+                    setShowPopup(true); // Show the popup 1.5 seconds before the animation ends
+                  }, (animationDuration - 15) * 1000); // Convert to milliseconds
                 }
               }
-            });
-          } else {
-            console.warn("No animations found in the NPC action model.");
-          }
-        });
+            }
+          });
+        } else {
+          console.warn("No animations found in the NPC action model.");
+        }
 
         // Load NPC Third Animation (character2_animation3.glb)
-        loader.load('/models/character2_animation3.glb', (gltf) => {
-          if (gltf.animations && gltf.animations.length > 0) {
-            const thirdClip = gltf.animations[0];
-            npcThirdActionRef.current = npcMixerRef.current.clipAction(thirdClip);
-            npcThirdActionRef.current.setLoop(THREE.LoopOnce); // Play the third animation once
-            npcThirdActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
-          } else {
-            console.warn("No animations found in the NPC third animation model.");
-          }
-        });
-      });
+        const npcThird = await loader.loadAsync('/models/character2_animation3.glb');
+        if (npcThird.animations && npcThird.animations.length > 0) {
+          const thirdClip = npcThird.animations[0];
+          npcThirdActionRef.current = npcMixerRef.current.clipAction(thirdClip);
+          npcThirdActionRef.current.setLoop(THREE.LoopOnce); // Play the third animation once
+          npcThirdActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
+        } else {
+          console.warn("No animations found in the NPC third animation model.");
+        }
 
-      // Load Second NPC (robot_stand_waving.glb)
-      loader.load('/models/robot_stand_waving.glb', (gltf) => {
-        console.log('Second NPC model loaded successfully:', gltf);
-
-        const newNpcModel = gltf.scene;
+        // Load Second NPC (robot_stand_waving.glb)
+        const newNpc = await loader.loadAsync('/models/robot_stand_waving.glb');
+        const newNpcModel = newNpc.scene;
         newNpcModel.position.set(5, 0, -4); // Adjust position as needed
         newNpcModel.scale.set(2, 2, 2); // Adjust scale as needed
         scene.add(newNpcModel);
 
         // Set up animations for the second NPC
         const newNpcMixer = new THREE.AnimationMixer(newNpcModel);
-        if (gltf.animations && gltf.animations.length > 0) {
-          const waveClip = gltf.animations[0]; // Assuming the waving animation is the first one
+        if (newNpc.animations && newNpc.animations.length > 0) {
+          const waveClip = newNpc.animations[0]; // Assuming the waving animation is the first one
           const waveAction = newNpcMixer.clipAction(waveClip);
           waveAction.play(); // Play the waving animation
         } else {
@@ -823,115 +732,91 @@ loader.load('/models/bridge3.glb', (gltf) => {
         }
 
         // Load the backwalk animation for the second NPC
-        loader.load('/models/backwalk.glb', (gltf) => {
-          if (gltf.animations && gltf.animations.length > 0) {
-            const backwalkClip = gltf.animations[0];
-            newNpcBackwalkActionRef.current = newNpcMixer.clipAction(backwalkClip);
-            newNpcBackwalkActionRef.current.setLoop(THREE.LoopRepeat); // Loop the backwalk animation
-            newNpcBackwalkActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
-          } else {
-            console.warn("No backwalk animation found in the backwalk model.");
-          }
-        });
+        const backwalk = await loader.loadAsync('/models/backwalk.glb');
+        if (backwalk.animations && backwalk.animations.length > 0) {
+          const backwalkClip = backwalk.animations[0];
+          newNpcBackwalkActionRef.current = newNpcMixer.clipAction(backwalkClip);
+          newNpcBackwalkActionRef.current.setLoop(THREE.LoopRepeat); // Loop the backwalk animation
+          newNpcBackwalkActionRef.current.clampWhenFinished = true; // Stay in the last frame after the animation ends
+        } else {
+          console.warn("No backwalk animation found in the backwalk model.");
+        }
 
         // Store the second NPC's mixer for updates
         newNpcMixerRef.current = newNpcMixer;
         newNpcModelRef.current = newNpcModel;
 
         console.log('Second NPC added to the scene:', newNpcModel);
-      }, undefined, (error) => {
-        console.error('Error loading second NPC model:', error);
-      });
 
-
-
-
-      loader.load('/models/flying_robots.glb', (gltf) => {
-        console.log('Flying Robots model loaded successfully:', gltf);
-      
-        const flyingRobotsModel = gltf.scene;
+        // Load flying_robots.glb
+        const flyingRobots = await loader.loadAsync('/models/flying_robots.glb');
+        const flyingRobotsModel = flyingRobots.scene;
         flyingRobotsModel.position.set(-30, 6, 31); // Initial position
         flyingRobotsModel.scale.set(1, 1, 1); // Adjust scale as needed
         scene.add(flyingRobotsModel);
-      
+
         const flyingRobotsMixer = new THREE.AnimationMixer(flyingRobotsModel);
-        if (gltf.animations && gltf.animations.length > 0) {
-          const animationClip = gltf.animations[0];
+        if (flyingRobots.animations && flyingRobots.animations.length > 0) {
+          const animationClip = flyingRobots.animations[0];
           const animationAction = flyingRobotsMixer.clipAction(animationClip);
           animationAction.play(); // Play the animation
         } else {
           console.warn("No animations found in the flying robots model.");
         }
-      
+
         flyingRobotsMixerRef.current = flyingRobotsMixer;
         flyingRobotsModelRef.current = flyingRobotsModel;
-      
-        // Debug: Log the flying robots model reference
-        console.log('Flying Robots Model Ref:', flyingRobotsModelRef.current);
-      
+
         console.log('Flying Robots added to the scene:', flyingRobotsModel);
-      
+
         // Start moving the flying robots immediately
         moveFlyingRobots();
-      }, undefined, (error) => {
-        console.error('Error loading flying robots model:', error);
-      });
 
+        // Load guid_robot.glb
+        const guidRobot = await loader.loadAsync('/models/guid_robot.glb');
+        const guidRobotModel = guidRobot.scene;
+        guidRobotModel.position.set(0, 3, 20); // Position it 2 units to the right of the player's initial position
+        guidRobotModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
+        guidRobotModel.visible = false; // Hide it initially
+        scene.add(guidRobotModel); // Add it to the scene
 
-      setTimeout(() => {
-        loader.load('/models/guid_robot.glb', (gltf) => {
-          console.log('Guid Robot model loaded successfully:', gltf);
-      
-          const guidRobotModel = gltf.scene;
-          guidRobotModel.position.set(0, 3, 20); // Position it 2 units to the right of the player's initial position
-          guidRobotModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
-          guidRobotModel.visible = false; // Hide it initially
-          scene.add(guidRobotModel); // Add it to the scene
-      
-          // Store the guid_robot model reference
-          guidRobotRef.current = guidRobotModel;
-      
-          // Set up animations for the guid robot
-          const guidRobotMixer = new THREE.AnimationMixer(guidRobotModel);
-          if (gltf.animations && gltf.animations.length > 0) {
-            const animationClip = gltf.animations[0]; // Assuming the animation is the first one
-            const animationAction = guidRobotMixer.clipAction(animationClip);
-            animationAction.play(); // Play the animation
-            animationAction.setLoop(THREE.LoopRepeat); // Ensure the animation loops
+        // Store the guid_robot model reference
+        guidRobotRef.current = guidRobotModel;
+
+        // Set up animations for the guid robot
+        const guidRobotMixer = new THREE.AnimationMixer(guidRobotModel);
+        if (guidRobot.animations && guidRobot.animations.length > 0) {
+          const animationClip = guidRobot.animations[0]; // Assuming the animation is the first one
+          const animationAction = guidRobotMixer.clipAction(animationClip);
+          animationAction.play(); // Play the animation
+          animationAction.setLoop(THREE.LoopRepeat); // Ensure the animation loops
+        } else {
+          console.warn("No animations found in the guid robot model.");
+        }
+
+        // Make the guid robot visible after 1 second
+        setTimeout(() => {
+          guidRobotModel.visible = true;
+          console.log('Guid Robot is now visible!');
+
+          // Play the audio when the guid_robot becomes visible
+          if (audioRef.current) {
+            console.log('Attempting to play audio...');
+            audioRef.current.play()
+              .then(() => {
+                console.log('Audio playback started successfully!');
+              })
+              .catch((error) => {
+                console.error('Error playing audio:', error);
+              });
           } else {
-            console.warn("No animations found in the guid robot model.");
+            console.error('Audio is not initialized!');
           }
-      
-          // Make the guid robot visible after 1 second
-          setTimeout(() => {
-            guidRobotModel.visible = true;
-            console.log('Guid Robot is now visible!');
-      
-            // Play the audio when the guid_robot becomes visible
-            if (audioRef.current) {
-              console.log('Attempting to play audio...');
-              audioRef.current.play()
-                .then(() => {
-                  console.log('Audio playback started successfully!');
-                })
-                .catch((error) => {
-                  console.error('Error playing audio:', error);
-                });
-            } else {
-              console.error('Audio is not initialized!');
-            }
-          }, 1000); // 1 second delay
-        }, undefined, (error) => {
-          console.error('Error loading guid robot model:', error);
-        });
-      }, 5000); // Delay before loading the guid_robot
+        }, 1000); // 1 second delay
 
-
-      // Load the first screen model (screen.glb)
-      loader.load('/models/screen.glb', (gltf) => {
-        console.log('Screen model loaded successfully:', gltf);
-
-        const screenModel = gltf.scene;
+        // Load the first screen model (screen.glb)
+        const screen = await loader.loadAsync('/models/screen.glb');
+        const screenModel = screen.scene;
         screenModel.position.set(-10, -10, -20); // Start below the ground
         screenModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
         screenModel.rotation.y = (11 * Math.PI) / 6; // 330° in radians
@@ -939,17 +824,11 @@ loader.load('/models/bridge3.glb', (gltf) => {
 
         screenModelRef.current = screenModel; // Store the screen model reference
 
-        // Debug: Log the screen model's position
-        console.log('Screen model initial position:', screenModel.position);
-      }, undefined, (error) => {
-        console.error('Error loading screen model:', error);
-      });
+        console.log('Screen model added to the scene:', screenModel);
 
-      // Load the second screen model (screen02.glb)
-      loader.load('/models/screen02.glb', (gltf) => {
-        console.log('Second screen model loaded successfully:', gltf);
-
-        const screen02Model = gltf.scene;
+        // Load the second screen model (screen02.glb)
+        const screen02 = await loader.loadAsync('/models/screen02.glb');
+        const screen02Model = screen02.scene;
         screen02Model.position.set(16, -10, -15); // Start below the ground
         screen02Model.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
         screen02Model.rotation.y = (29 * Math.PI) / 18;
@@ -957,17 +836,11 @@ loader.load('/models/bridge3.glb', (gltf) => {
 
         screen02ModelRef.current = screen02Model; // Store the second screen model reference
 
-        // Debug: Log the second screen model's position
-        console.log('Second screen model initial position:', screen02Model.position);
-      }, undefined, (error) => {
-        console.error('Error loading second screen model:', error);
-      });
+        console.log('Second screen model added to the scene:', screen02Model);
 
-      // Load the download button model (download1.glb)
-      loader.load('/models/download1.glb', (gltf) => {
-        console.log('Download button model loaded successfully:', gltf);
-
-        const downloadButtonModel = gltf.scene;
+        // Load the download button model (download1.glb)
+        const downloadButton = await loader.loadAsync('/models/download1.glb');
+        const downloadButtonModel = downloadButton.scene;
         downloadButtonModel.position.set(-10, -10, -20); // Start below the ground (hidden)
         downloadButtonModel.scale.set(0.5, 0.5, 0.5); // Adjust scale as needed
         downloadButtonModel.rotation.y = (11 * Math.PI) / 6; // Match the rotation of the first screen
@@ -977,71 +850,49 @@ loader.load('/models/bridge3.glb', (gltf) => {
         downloadButtonModelRef.current = downloadButtonModel; // Store the download button model reference
 
         console.log('Download button model added to the scene:', downloadButtonModel);
-      }, undefined, (error) => {
-        console.error('Error loading download button model:', error);
-      });
 
-      // Load the knight model (knight1.glb)
-      loader.load('/models/knight1.glb', (gltf) => {
-        console.log('Knight model loaded successfully:', gltf);
+        // Load the knight model (knight1.glb)
+        const knight1 = await loader.loadAsync('/models/knight1.glb');
+        const knight1Model = knight1.scene;
+        knight1Model.position.set(23, 0, 0); // Adjust position as needed
+        knight1Model.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
+        knight1Model.rotation.y = Math.PI / -2;
+        scene.add(knight1Model);
 
-        const knightModel = gltf.scene;
-        knightModel.position.set(23, 0, 0); // Adjust position as needed
-        knightModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
-        knightModel.rotation.y = Math.PI / -2;
-        scene.add(knightModel);
+        console.log('Knight added to the scene:', knight1Model);
 
-        console.log('Knight added to the scene:', knightModel);
-      }, undefined, (error) => {
-        console.error('Error loading knight model:', error);
-      });
+        // Load the knight model (knight2.glb)
+        const knight2 = await loader.loadAsync('/models/knight2.glb');
+        const knight2Model = knight2.scene;
+        knight2Model.position.set(-23, 0, 0); // Adjust position as needed
+        knight2Model.scale.set(2, 2, 2); // Adjust scale as needed
+        knight2Model.rotation.y = Math.PI / 2;
+        scene.add(knight2Model);
 
-      // Load the knight model (knight2.glb)
-      loader.load('/models/knight2.glb', (gltf) => {
-        console.log('Knight model loaded successfully:', gltf);
-        const knightMode2 = gltf.scene;
-        knightMode2.position.set(-23, 0, 0); // Adjust position as needed
-        knightMode2.scale.set(2, 2, 2); // Adjust scale as needed
-        knightMode2.rotation.y = Math.PI / 2;
-        scene.add(knightMode2);
+        console.log('Knight added to the scene:', knight2Model);
 
-        console.log('Knight added to the scene:', knightMode2);
-      }, undefined, (error) => {
-        console.error('Error loading knight model:', error);
-      });
+        // Load the knight model (knight3.glb)
+        const knight3 = await loader.loadAsync('/models/knight3.glb');
+        const knight3Model = knight3.scene;
+        knight3Model.position.set(0, 0, -29); // Adjust position as needed
+        knight3Model.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
+        scene.add(knight3Model);
 
-      // Load the knight model (knight3.glb)
-      loader.load('/models/knight3.glb', (gltf) => {
-        console.log('Knight model loaded successfully:', gltf);
-        const knightMode3 = gltf.scene;
-        knightMode3.position.set(0, 0, -29); // Adjust position as needed
-        knightMode3.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
-        scene.add(knightMode3);
+        console.log('Knight added to the scene:', knight3Model);
 
-        console.log('Knight added to the scene:', knightMode3);
-      }, undefined, (error) => {
-        console.error('Error loading knight model:', error);
-      });
+        // Load the target model (target.glb)
+        const target = await loader.loadAsync('/models/target.glb');
+        const targetModel = target.scene;
+        targetModel.position.set(19, 2.5, 26); // Adjust position as needed
+        targetModel.scale.set(0.01, 0.01, 0.01); // Adjust scale as needed
+        targetModel.rotation.y = Math.PI / -2;
+        scene.add(targetModel);
 
-      // Load the target model (target.glb)
-      loader.load('/models/target.glb', (gltf) => {
-        console.log('target model loaded successfully:', gltf);
-        const target = gltf.scene;
-        target.position.set(19, 2.5, 26); // Adjust position as needed
-        target.scale.set(0.01, 0.01, 0.01); // Adjust scale as needed
-        target.rotation.y = Math.PI / -2;
-        scene.add(target);
+        console.log('Target added to the scene:', targetModel);
 
-        console.log('target added to the scene:', target);
-      }, undefined, (error) => {
-        console.error('Error loading target model:', error);
-      });
-
-      // Load the arrow model (arrow.glb)
-      loader.load('/models/arrow.glb', (gltf) => {
-        console.log('Arrow model loaded successfully:', gltf);
-
-        const arrowModel = gltf.scene;
+        // Load the arrow model (arrow.glb)
+        const arrow = await loader.loadAsync('/models/arrow.glb');
+        const arrowModel = arrow.scene;
         arrowModel.position.set(6.5, 0, 26.5); // Adjust position as needed
         arrowModel.scale.set(2.3, 2.3, 2.3); // Adjust scale as needed
         arrowModel.rotation.y = Math.PI / 2;
@@ -1049,8 +900,8 @@ loader.load('/models/bridge3.glb', (gltf) => {
 
         // Set up animations for the arrow
         const arrowMixer = new THREE.AnimationMixer(arrowModel);
-        if (gltf.animations && gltf.animations.length > 0) {
-          const arrowClip = gltf.animations[0]; // Assuming the animation is the first one
+        if (arrow.animations && arrow.animations.length > 0) {
+          const arrowClip = arrow.animations[0]; // Assuming the animation is the first one
           arrowAnimationRef.current = arrowMixer.clipAction(arrowClip);
           arrowAnimationRef.current.play(); // Play the arrow animation
         } else {
@@ -1062,24 +913,18 @@ loader.load('/models/bridge3.glb', (gltf) => {
         arrowModelRef.current = arrowModel;
 
         console.log('Arrow added to the scene:', arrowModel);
-      }, undefined, (error) => {
-        console.error('Error loading arrow model:', error);
-      });
 
-      // Load the display_robot model (display_robot.glb)
-      loader.load('/models/display_robot.glb', (gltf) => {
-        console.log('Display Robot model loaded successfully:', gltf);
-
-        const displayRobotModel = gltf.scene;
+        // Load the display_robot model (display_robot.glb)
+        const displayRobot = await loader.loadAsync('/models/display_robot.glb');
+        const displayRobotModel = displayRobot.scene;
         displayRobotModel.position.set(-15, 2, -3.5); // Adjust position as needed
         displayRobotModel.scale.set(2, 2, 2); // Adjust scale as needed
-        
         scene.add(displayRobotModel);
 
         // Set up animations for the display robot
         const displayRobotMixer = new THREE.AnimationMixer(displayRobotModel);
-        if (gltf.animations && gltf.animations.length > 0) {
-          const animationClip = gltf.animations[0]; // Assuming the animation is the first one
+        if (displayRobot.animations && displayRobot.animations.length > 0) {
+          const animationClip = displayRobot.animations[0]; // Assuming the animation is the first one
           const animationAction = displayRobotMixer.clipAction(animationClip);
           animationAction.play(); // Play the animation
         } else {
@@ -1091,15 +936,10 @@ loader.load('/models/bridge3.glb', (gltf) => {
         displayRobotModelRef.current = displayRobotModel;
 
         console.log('Display Robot added to the scene:', displayRobotModel);
-      }, undefined, (error) => {
-        console.error('Error loading display robot model:', error);
-      });
 
-      // Load the chatbubble03 model
-      loader.load('/models/chatbubble03.glb', (gltf) => {
-        console.log('Chat bubble 03 model loaded successfully:', gltf);
-
-        const chatBubble03Model = gltf.scene;
+        // Load the chatbubble03 model
+        const chatBubble03 = await loader.loadAsync('/models/chatbubble03.glb');
+        const chatBubble03Model = chatBubble03.scene;
         chatBubble03Model.position.set(-15, 5, -3.5); // Position it above the display_robot
         chatBubble03Model.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
         chatBubble03Model.rotation.y = Math.PI / -2; // Adjust rotation as needed
@@ -1108,33 +948,22 @@ loader.load('/models/bridge3.glb', (gltf) => {
         scene.add(chatBubble03Model); // Add the chat bubble to the scene
 
         console.log('Chat bubble 03 added to the scene:', chatBubble03Model);
-      }, undefined, (error) => {
-        console.error('Error loading chat bubble 03 model:', error);
-      });
 
-      // Load the chat bubble model (chatbubble01.glb)
-      loader.load('/models/chatbubble01.glb', (gltf) => {
-        console.log('Chat bubble model loaded successfully:', gltf);
+        // Load the chat bubble model (chatbubble01.glb)
+        const chatBubble01 = await loader.loadAsync('/models/chatbubble01.glb');
+        const chatBubble01Model = chatBubble01.scene;
+        chatBubble01Model.position.set(-4.5, 4, 5); // Adjust position as needed (above the NPC)
+        chatBubble01Model.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
+        chatBubble01Model.rotation.y = Math.PI / -2;
+        chatBubble01Model.visible = true; // Make the chat bubble visible
+        chatBubble01Model.name = 'chatbubble01'; // Ensure the chat bubble has a unique name
+        scene.add(chatBubble01Model); // Add the chat bubble to the scene
 
-        const chatBubbleModel = gltf.scene;
-        chatBubbleModel.position.set(-4.5, 4, 5); // Adjust position as needed (above the NPC)
-        chatBubbleModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
-        chatBubbleModel.rotation.y = Math.PI / -2;
-        chatBubbleModel.visible = true; // Make the chat bubble visible
-        chatBubbleModel.name = 'chatbubble01'; // Ensure the chat bubble has a unique name
-        scene.add(chatBubbleModel); // Add the chat bubble to the scene
-        
+        console.log('Chat bubble added to the scene:', chatBubble01Model);
 
-        console.log('Chat bubble added to the scene:', chatBubbleModel);
-      }, undefined, (error) => {
-        console.error('Error loading chat bubble model:', error);
-      });
-
-      // Load the second chat bubble model (chatbubble02.glb)
-      loader.load('/models/chatbubble02.glb', (gltf) => {
-        console.log('Second chat bubble model loaded successfully:', gltf);
-
-        const chatBubble02Model = gltf.scene;
+        // Load the second chat bubble model (chatbubble02.glb)
+        const chatBubble02 = await loader.loadAsync('/models/chatbubble02.glb');
+        const chatBubble02Model = chatBubble02.scene;
         chatBubble02Model.position.set(5, 5, -4); // Adjust position as needed (above the second NPC)
         chatBubble02Model.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
         chatBubble02Model.rotation.y = Math.PI / -2;
@@ -1143,45 +972,32 @@ loader.load('/models/bridge3.glb', (gltf) => {
         scene.add(chatBubble02Model); // Add the chat bubble to the scene
 
         console.log('Second chat bubble added to the scene:', chatBubble02Model);
-      }, undefined, (error) => {
-        console.error('Error loading second chat bubble model:', error);
-      });
 
-      // Load the LinkedIn model (linkedIn.glb)
-      loader.load('/models/linkedIn.glb', (gltf) => {
-        console.log('LinkedIn model loaded successfully:', gltf);
-
-        const linkedInModel = gltf.scene;
+        // Load the LinkedIn model (linkedIn.glb)
+        const linkedIn = await loader.loadAsync('/models/linkedIn.glb');
+        const linkedInModel = linkedIn.scene;
         linkedInModel.position.set(16, 0, -3); // Adjust position as needed
         linkedInModel.scale.set(1, 1, 1); // Adjust scale as needed
         scene.add(linkedInModel);
         linkedInModelRef.current = linkedInModel; // Store the LinkedIn model reference
 
         console.log('LinkedIn model added to the scene:', linkedInModel);
-      }, undefined, (error) => {
-        console.error('Error loading LinkedIn model:', error);
-      });
 
-
-     
-
-      loader.load('/models/github.glb', (gltf) => {
-        console.log('GitHub model loaded successfully:', gltf);
-      
-        const githubModel = gltf.scene;
+        // Load the GitHub model (github.glb)
+        const github = await loader.loadAsync('/models/github.glb');
+        const githubModel = github.scene;
         githubModel.position.set(16, 1, 3.5); // Position
         githubModel.scale.set(1, 1, 1); // Adjust scale as needed
         scene.add(githubModel);
         githubModelRef.current = githubModel; // Store the GitHub model reference
-      
+
         console.log('GitHub model added to the scene:', githubModel);
-      }, undefined, (error) => {
-        console.error('Error loading GitHub model:', error);
-      });
+      } catch (error) {
+        console.error('Error loading assets:', error);
+      }
+    };
 
-
-
-    });
+    loadAssets();
 
     const keys = {};
     const moveSpeed = 0.1;
@@ -1259,7 +1075,7 @@ loader.load('/models/bridge3.glb', (gltf) => {
       animationFrameId.current = requestAnimationFrame(animate); // Use animationFrameId.current
       const delta = clock.getDelta();
 
-       // Debug: Log the clock's elapsed time
+      // Debug: Log the clock's elapsed time
       console.log('Clock elapsed time:', clock.getElapsedTime());
 
       // Update all animation mixers
@@ -1341,20 +1157,18 @@ loader.load('/models/bridge3.glb', (gltf) => {
       }
 
       // Animate the GitHub model
-const githubModel = githubModelRef.current;
-if (githubModel) {
-  console.log('Animating GitHub model:', githubModel.position.y);
+      const githubModel = githubModelRef.current;
+      if (githubModel) {
+        console.log('Animating GitHub model:', githubModel.position.y);
 
-  // Move up and down slightly
-  githubModel.position.y = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.3;
+        // Move up and down slightly
+        githubModel.position.y = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.3;
 
-  // Rotate slowly
-  githubModel.rotation.y += delta * 0.4;
-} else {
-  console.error('GitHub model not found!');
-}
-
-      
+        // Rotate slowly
+        githubModel.rotation.y += delta * 0.4;
+      } else {
+        console.error('GitHub model not found!');
+      }
 
       const playerModel = playerModelRef.current;
       const npcModel = npcModelRef.current;
@@ -1397,37 +1211,37 @@ if (githubModel) {
       }
 
       // Check if player is near the display_robot model
-  if (playerModel && displayRobotModelRef.current) {
-    const distanceToDisplayRobot = playerModel.position.distanceTo(displayRobotModelRef.current.position);
-    console.log("Distance to Display Robot:", distanceToDisplayRobot); // Debugging log
+      if (playerModel && displayRobotModelRef.current) {
+        const distanceToDisplayRobot = playerModel.position.distanceTo(displayRobotModelRef.current.position);
+        console.log("Distance to Display Robot:", distanceToDisplayRobot); // Debugging log
 
-    // Show the PDF popup if the player is within 3 units of the display_robot and the PDF hasn't been opened yet
-    if (distanceToDisplayRobot < 3 && !showPdfPopup && !hasOpenedProjectsPdf.current) {
-      setShowPdfPopup(true); // Show the PDF popup
-      hasOpenedProjectsPdf.current = true; // Mark the PDF as opened
-    } else if (distanceToDisplayRobot >= 3 && showPdfPopup) {
-      setShowPdfPopup(false); // Hide the PDF popup
-    }
-  }
+        // Show the PDF popup if the player is within 3 units of the display_robot and the PDF hasn't been opened yet
+        if (distanceToDisplayRobot < 3 && !showPdfPopup && !hasOpenedProjectsPdf.current) {
+          setShowPdfPopup(true); // Show the PDF popup
+          hasOpenedProjectsPdf.current = true; // Mark the PDF as opened
+        } else if (distanceToDisplayRobot >= 3 && showPdfPopup) {
+          setShowPdfPopup(false); // Hide the PDF popup
+        }
+      }
 
       // Check if player is near the guid_robot
-if (playerModel && guidRobotRef.current) {
-  const distanceToGuidRobot = playerModel.position.distanceTo(guidRobotRef.current.position);
-  console.log("Distance to Guid Robot:", distanceToGuidRobot); // Debugging log
+      if (playerModel && guidRobotRef.current) {
+        const distanceToGuidRobot = playerModel.position.distanceTo(guidRobotRef.current.position);
+        console.log("Distance to Guid Robot:", distanceToGuidRobot); // Debugging log
 
-  // Play the second audio if the player is within 3 units of the guid_robot and the audio hasn't played yet
-  if (distanceToGuidRobot < 5 && audioRef2.current && audioRef2.current.paused && !hasPlayedGuidRobotAudioRef.current) {
-    audioRef2.current.play()
-      .then(() => {
-        console.log('Second audio playback started successfully!');
-        hasPlayedGuidRobotAudioRef.current = true; // Mark the audio as played
-        console.log('hasPlayedGuidRobotAudioRef set to:', true); // Debugging log
-      })
-      .catch((error) => {
-        console.error('Error playing second audio:', error);
-      });
-  }
-}
+        // Play the second audio if the player is within 3 units of the guid_robot and the audio hasn't played yet
+        if (distanceToGuidRobot < 5 && audioRef2.current && audioRef2.current.paused && !hasPlayedGuidRobotAudioRef.current) {
+          audioRef2.current.play()
+            .then(() => {
+              console.log('Second audio playback started successfully!');
+              hasPlayedGuidRobotAudioRef.current = true; // Mark the audio as played
+              console.log('hasPlayedGuidRobotAudioRef set to:', true); // Debugging log
+            })
+            .catch((error) => {
+              console.error('Error playing second audio:', error);
+            });
+        }
+      }
 
       // Check if player is near the first NPC
       if (playerModel && npcModel) {
@@ -1506,74 +1320,74 @@ if (playerModel && guidRobotRef.current) {
       }
 
       // Check if player is near the LinkedIn model
-if (playerModel && linkedInModelRef.current) {
-  const distanceToLinkedIn = playerModel.position.distanceTo(linkedInModelRef.current.position);
-  console.log("Distance to LinkedIn model:", distanceToLinkedIn); // Debugging log
+      if (playerModel && linkedInModelRef.current) {
+        const distanceToLinkedIn = playerModel.position.distanceTo(linkedInModelRef.current.position);
+        console.log("Distance to LinkedIn model:", distanceToLinkedIn); // Debugging log
 
-  // Redirect to LinkedIn profile if the player is within 2 units of the LinkedIn model
-  if (distanceToLinkedIn < 2 && !hasLinkedInRedirected.current) {
-    hasLinkedInRedirected.current = true; // Mark the redirection as done
+        // Redirect to LinkedIn profile if the player is within 2 units of the LinkedIn model
+        if (distanceToLinkedIn < 2 && !hasLinkedInRedirected.current) {
+          hasLinkedInRedirected.current = true; // Mark the redirection as done
 
-    // Reset all movement keys
-    keys['w'] = false;
-    keys['a'] = false;
-    keys['s'] = false;
-    keys['d'] = false;
+          // Reset all movement keys
+          keys['w'] = false;
+          keys['a'] = false;
+          keys['s'] = false;
+          keys['d'] = false;
 
-    // Pause the player's walk animation
-    if (playerMixerRef.current) {
-      const walkAction = playerMixerRef.current._actions[0];
-      if (walkAction) {
-        walkAction.paused = true; // Pause the walk animation
+          // Pause the player's walk animation
+          if (playerMixerRef.current) {
+            const walkAction = playerMixerRef.current._actions[0];
+            if (walkAction) {
+              walkAction.paused = true; // Pause the walk animation
+            }
+          }
+
+          // Open LinkedIn in a new tab
+          window.open('https://www.linkedin.com/in/yaswanth-popuri-975aa6160', '_blank');
+        }
       }
-    }
 
-    // Open LinkedIn in a new tab
-    window.open('https://www.linkedin.com/in/yaswanth-popuri-975aa6160', '_blank');
-  }
-}
+      // Check if player is near the GitHub model
+      if (playerModel && githubModelRef.current) {
+        const distanceToGitHub = playerModel.position.distanceTo(githubModelRef.current.position);
+        console.log("Distance to GitHub model:", distanceToGitHub); // Debugging log
 
-// Check if player is near the GitHub model
-if (playerModel && githubModelRef.current) {
-  const distanceToGitHub = playerModel.position.distanceTo(githubModelRef.current.position);
-  console.log("Distance to GitHub model:", distanceToGitHub); // Debugging log
+        // Redirect to GitHub profile if the player is within 2 units of the GitHub model
+        if (distanceToGitHub < 2 && !hasGitHubRedirected.current) {
+          hasGitHubRedirected.current = true; // Mark the redirection as done
 
-  // Redirect to GitHub profile if the player is within 2 units of the GitHub model
-  if (distanceToGitHub < 2 && !hasGitHubRedirected.current) {
-    hasGitHubRedirected.current = true; // Mark the redirection as done
+          // Reset all movement keys
+          keys['w'] = false;
+          keys['a'] = false;
+          keys['s'] = false;
+          keys['d'] = false;
 
-    // Reset all movement keys
-    keys['w'] = false;
-    keys['a'] = false;
-    keys['s'] = false;
-    keys['d'] = false;
+          // Pause the player's walk animation
+          if (playerMixerRef.current) {
+            const walkAction = playerMixerRef.current._actions[0];
+            if (walkAction) {
+              walkAction.paused = true; // Pause the walk animation
+            }
+          }
 
-    // Pause the player's walk animation
-    if (playerMixerRef.current) {
-      const walkAction = playerMixerRef.current._actions[0];
-      if (walkAction) {
-        walkAction.paused = true; // Pause the walk animation
+          // Open GitHub in a new tab
+          window.open('https://github.com/ypopuri', '_blank');
+        }
       }
-    }
-
-    // Open GitHub in a new tab
-    window.open('https://github.com/ypopuri', '_blank');
-  }
-}
 
       // Check if player is near the download button
-  if (playerModel && downloadButtonModelRef.current) {
-    const distanceToDownloadButton = playerModel.position.distanceTo(downloadButtonModelRef.current.position);
-    console.log("Distance to Download Button:", distanceToDownloadButton); // Debugging log
+      if (playerModel && downloadButtonModelRef.current) {
+        const distanceToDownloadButton = playerModel.position.distanceTo(downloadButtonModelRef.current.position);
+        console.log("Distance to Download Button:", distanceToDownloadButton); // Debugging log
 
-    // Show the skill popup if the player is within 2 units of the download button and the PDF hasn't been opened yet
-    if (distanceToDownloadButton < 4 && !showSkillPopup && !hasOpenedSkillsPdf.current) {
-      setShowSkillPopup(true); // Show the skill popup
-      hasOpenedSkillsPdf.current = true; // Mark the PDF as opened
-    } else if (distanceToDownloadButton >= 2 && showSkillPopup) {
-      setShowSkillPopup(false); // Hide the skill popup
-    }
-  }
+        // Show the skill popup if the player is within 2 units of the download button and the PDF hasn't been opened yet
+        if (distanceToDownloadButton < 4 && !showSkillPopup && !hasOpenedSkillsPdf.current) {
+          setShowSkillPopup(true); // Show the skill popup
+          hasOpenedSkillsPdf.current = true; // Mark the PDF as opened
+        } else if (distanceToDownloadButton >= 2 && showSkillPopup) {
+          setShowSkillPopup(false); // Hide the skill popup
+        }
+      }
 
       // Make the NPCs face the player
       if (npcModel) {
@@ -1606,7 +1420,7 @@ if (playerModel && githubModelRef.current) {
       console.log('Component unmounted'); // Debugging log
       clearTimeout(showTimer);
       clearTimeout(hideTimer);
-    
+
       if (mountRef.current && rendererRef.current) {
         mountRef.current.removeChild(rendererRef.current.domElement);
       }
@@ -1618,7 +1432,7 @@ if (playerModel && githubModelRef.current) {
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current); // Use animationFrameId.current
       }
-    
+
       if (document.pointerLockElement === rendererRef.current?.domElement) {
         document.exitPointerLock();
       }
@@ -1630,26 +1444,31 @@ if (playerModel && githubModelRef.current) {
       {/* Three.js Canvas */}
       <div ref={mountRef} /> {/* This is where the Three.js canvas will be rendered */}
 
+      {/* Loading Screen */}
+      {isLoading && <LoadingScreen progress={loadingProgress} />}
+
       {/* Blur Effect and Welcome Message */}
       <BlurWelcomeMessage showWelcomeMessage={showWelcomeMessage} /> {/* Use the new component */}
 
-       {/* Instructions Overlay */}
-    {showInstructions && <InstructionsOverlay />} {/* Ensure this is included */}
-    
-    {/* Mobile Controls */}
-    {isMobile && <MobileControls onMove={handleJoystickMove} />}
+      {/* Instructions Overlay */}
+      {showInstructions && <InstructionsOverlay />} {/* Ensure this is included */}
+
+      {/* Mobile Controls */}
+      {isMobile && <MobileControls onMove={handleJoystickMove} />}
+
       {/* Popup Components */}
       {showPopup && <Popup onClose={() => setShowPopup(false)} />} {/* Popup for the first NPC */}
       {showSecondNpcPopup && (
-        <SecondNpcPopup onYes={handleYesClick} onNo={handleNoClick} /> 
+        <SecondNpcPopup onYes={handleYesClick} onNo={handleNoClick} />
       )}{/* Popup for the second NPC */}
       {showSkillPopup && (
-        <SkillPopup onClose={() => setShowSkillPopup(false)} /> 
+        <SkillPopup onClose={() => setShowSkillPopup(false)} />
       )}{/* Popup for the skills PDF */}
       {showPdfPopup && (
-        <PdfPopup onClose={() => setShowPdfPopup(false)} /> 
+        <PdfPopup onClose={() => setShowPdfPopup(false)} />
       )}{/* Popup for the project PDF */}
     </>
   );
 };
+
 export default GameScene;
