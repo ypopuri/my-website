@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { TextureLoader } from 'three'; // Use TextureLoader for JPEG
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { Howl } from 'howler';
 import * as THREE from 'three';
@@ -12,7 +11,6 @@ import WelcomeMessage from './WelcomeMessage';
 import BlurWelcomeMessage from './BlurWelcomeMessage';
 import InstructionsOverlay from './InstructionsOverlay'; // Import the new InstructionsOverlay component
 import MobileControls from './MobileControls'; // Import the MobileControls component
-import LoadingScreen from './LoadingScreen'; // Adjust the path as needed
 
 const GameScene = () => 
   {
@@ -32,53 +30,34 @@ const GameScene = () =>
     const hasPlayedGuidRobotAudio3 = useRef(false); // Track if the third audio has played
     const [showInstructions, setShowInstructions] = useState(true); // State to control the visibility of instructions
     const [isMobile, setIsMobile] = useState(false); // State to check if the device is mobile
+    const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
     const sceneRef = useRef(null); // Use useRef for scene
     const cameraRef = useRef(null); // Use useRef for camera
     const rendererRef = useRef(null); // Use useRef for renderer
-
-    const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
     const [isLoading, setIsLoading] = useState(true); // Track if loading is complete
-    const loadingManager = new THREE.LoadingManager(() => 
-      {
-        console.log('All assets loaded');
-        setIsLoading(false); // Hide loading screen when all assets are loaded
-      },
-      (item, loaded, total) => 
-        {
-          const progress = (loaded / total) * 100;
-          setLoadingProgress(progress); // Update loading progress
-        }
-    );
-    
-    const loader = new GLTFLoader(loadingManager); // Use the loading manager
-    
     // Check if the device is mobile
-    useEffect(() => 
-      {
-        const checkIsMobile = () => 
-          {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          };
-        setIsMobile(checkIsMobile());
-      }, []);
+  useEffect(() => {
+    const checkIsMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    };
+    setIsMobile(checkIsMobile());
+  }, []);
 
-    // Handle joystick movement
-    const handleJoystickMove = (x, y) => 
-      {
-        const playerModel = playerModelRef.current;
-        if (playerModel) 
-          {
-            const moveSpeed = 0.1;
-            const direction = new THREE.Vector3(x, 0, -y).multiplyScalar(moveSpeed); // Invert y for correct movement
-            const newPosition = playerModel.position.clone().add(direction);
-            
-            // Check for collisions before moving the player
-            if (!checkCollision(newPosition)) 
-              {
-                playerModel.position.copy(newPosition);
-              }
-          }
-      };
+  // Handle joystick movement
+  const handleJoystickMove = (x, y) => {
+    const playerModel = playerModelRef.current;
+    if (playerModel) {
+      const moveSpeed = 0.1;
+      const direction = new THREE.Vector3(x, 0, -y).multiplyScalar(moveSpeed); // Invert y for correct movement
+      const newPosition = playerModel.position.clone().add(direction);
+
+      // Check for collisions before moving the player
+      if (!checkCollision(newPosition)) {
+        playerModel.position.copy(newPosition);
+      }
+    }
+  };
+    
     
     const audioRef = useRef(null); // Ref to store the audio object
     const guidRobotRef = useRef(null); // Ref to store the guid_robot model
@@ -263,6 +242,7 @@ const GameScene = () =>
         return false; // No collision
       };
 
+
     // Function to move the flying robots along the square path
     const moveFlyingRobots = () => 
       {
@@ -383,71 +363,69 @@ const GameScene = () =>
               {
                 requestAnimationFrame(animateRise);
               } else {
-                console.log('Second screen has fully risen!');
-                hasScreen02Risen.current = true;
+        console.log('Second screen has fully risen!');
+        hasScreen02Risen.current = true;
 
-                // Show the download button after the screen has risen
-                const downloadButtonModel = downloadButtonModelRef.current;
-                if (downloadButtonModel) 
-                  {
-                    downloadButtonModel.visible = true; // Make the button visible
-                    console.log('Download button is now visible');
-                  }
+        // Show the download button after the screen has risen
+        const downloadButtonModel = downloadButtonModelRef.current;
+        if (downloadButtonModel) {
+          downloadButtonModel.visible = true; // Make the button visible
+          console.log('Download button is now visible');
+        }
 
-                // Check if both screens have risen
-                if (hasScreenRisen.current && hasScreen02Risen.current) 
-                  {
-                    showDownloadButton();
-                  }
-                // Check if both screens have risen
-                if (hasScreenRisen.current && hasScreen02Risen.current) 
-                  {
-                    moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
-                  }
-              }
-          };
-        animateRise();
-      };
+        // Check if both screens have risen
+        if (hasScreenRisen.current && hasScreen02Risen.current) {
+          showDownloadButton();
+        }
+        // Check if both screens have risen
+      if (hasScreenRisen.current && hasScreen02Risen.current) {
+        moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
+      }
+      }
+    };
+
+    animateRise();
+  };
 
 
-    const moveGuidRobotToDownloadButton = () => 
-      {
-        const guidRobotModel = guidRobotRef.current;
-        if (!guidRobotModel) return;
-        guidRobotModel.visible = true; // Ensure the guid_robot is visible
-        console.log('Guid Robot is now visible!');
-        const moveDuration = 5; // Duration of movement in seconds
-        const startTime = clock.getElapsedTime();
-        const move = () => 
-          {
-            const elapsedTime = clock.getElapsedTime() - startTime;
-            const progress = Math.min(elapsedTime / moveDuration, 1);
-            // Interpolate the position
-            guidRobotModel.position.lerp(guidRobotTargetPosition, progress);
-            if (guidRobotModel.position.distanceTo(guidRobotTargetPosition) > 0.1) 
-              {
-                requestAnimationFrame(move); // Continue moving until the target is reached
-              } else {
-                console.log('Guid Robot has reached the download button!');
-
-              // Play the third audio if it hasn't played yet
-              if (audioRef3.current && audioRef3.current.paused && !hasPlayedGuidRobotAudio3.current) 
-                {
-                  audioRef3.current.play()
-                  .then(() => 
-                    {
-                      console.log('Third audio playback started successfully!');
-                      hasPlayedGuidRobotAudio3.current = false; // Mark the audio as played
-                    })
-                  .catch((error) => 
-                    {
-                      console.error('Error playing third audio:', error);
-                    });
-                }
-              }
-          };
-        move(); // Start moving
-      };
+  const moveGuidRobotToDownloadButton = () => {
+    const guidRobotModel = guidRobotRef.current;
+    if (!guidRobotModel) return;
+  
+    guidRobotModel.visible = true; // Ensure the guid_robot is visible
+    console.log('Guid Robot is now visible!');
+  
+    const moveDuration = 5; // Duration of movement in seconds
+    const startTime = clock.getElapsedTime();
+  
+    const move = () => {
+      const elapsedTime = clock.getElapsedTime() - startTime;
+      const progress = Math.min(elapsedTime / moveDuration, 1);
+  
+      // Interpolate the position
+      guidRobotModel.position.lerp(guidRobotTargetPosition, progress);
+  
+      if (guidRobotModel.position.distanceTo(guidRobotTargetPosition) > 0.1) {
+        requestAnimationFrame(move); // Continue moving until the target is reached
+      } else {
+        console.log('Guid Robot has reached the download button!');
+  
+        // Play the third audio if it hasn't played yet
+        if (audioRef3.current && audioRef3.current.paused && !hasPlayedGuidRobotAudio3.current) {
+          audioRef3.current.play()
+            .then(() => {
+              console.log('Third audio playback started successfully!');
+              hasPlayedGuidRobotAudio3.current = false; // Mark the audio as played
+            })
+            .catch((error) => {
+              console.error('Error playing third audio:', error);
+            });
+        }
+      }
+    };
+  
+    move(); // Start moving
+  };
 
   // Function to show the download button
   const showDownloadButton = () => {
@@ -515,11 +493,10 @@ const GameScene = () =>
   };
 
   // Handle Yes button click for the second NPC popup
-  const handleYesClick = () => 
-    {
-      setShowSecondNpcPopup(false); // Close the popup
-      moveSecondNpcToTarget(); // Move the second NPC to the target position
-    };
+  const handleYesClick = () => {
+    setShowSecondNpcPopup(false); // Close the popup
+    moveSecondNpcToTarget(); // Move the second NPC to the target position
+  };
 
   // Handle No button click for the second NPC popup
   const handleNoClick = () => {
@@ -527,11 +504,12 @@ const GameScene = () =>
     moveSecondNpcToTarget(); // Move the second NPC to the target position
   };
 
-  useEffect(() => 
-    {
-      console.log('Component mounted'); // Debugging log
-      const showTimer = setTimeout(() => {
-      console.log('Showing welcome message'); // Debugging log
+  useEffect(() => {
+    
+    console.log('Component mounted'); // Debugging log
+
+  const showTimer = setTimeout(() => {
+    console.log('Showing welcome message'); // Debugging log
     setShowWelcomeMessage(true); // Show the welcome message
   }, 4000);
 
@@ -540,10 +518,7 @@ const GameScene = () =>
     setShowWelcomeMessage(false); // Hide the welcome message
   }, 6000);
 
-  
-
-
-    // Create the scene
+  // Create the scene
   const scene = new THREE.Scene();
   sceneRef.current = scene; // Assign the scene to sceneRef
 
@@ -569,30 +544,6 @@ const GameScene = () =>
   if (mountRef.current) {
     mountRef.current.appendChild(renderer.domElement);
   }
-
-
-
-    
-
-// Load the JPEG environment map
-const textureLoader = new TextureLoader();
-textureLoader.load(
-  '/models/ancient-palace/hdri-anime-pure-sky-panorama-v/HDR_Anime_Pure_Sky (33).jpg',
-  (texture) => {
-    // Ensure sceneRef.current is not null
-    if (sceneRef.current) {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      sceneRef.current.background = texture; // Set the background
-      sceneRef.current.environment = texture; // Set the environment map for reflections
-    } else {
-      console.error('Scene is not initialized!');
-    }
-  },
-  undefined,
-  (error) => {
-    console.error('Error loading JPEG environment map:', error);
-  }
-);
 
     // Add directional light
   const light = new THREE.DirectionalLight(0xffffff, 1);
