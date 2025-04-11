@@ -36,33 +36,34 @@ const GameScene = () =>
     const rendererRef = useRef(null); // Use useRef for renderer
     const [isLoading, setIsLoading] = useState(true); // Track if loading is complete
     // Check if the device is mobile
-  useEffect(() => {
-    const checkIsMobile = () => {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    };
-    setIsMobile(checkIsMobile());
-  }, []);
+    useEffect(() => 
+    {
+      const checkIsMobile = () => 
+        {
+          return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        };
+        setIsMobile(checkIsMobile());
+    }, []);
 
-  // Handle joystick movement
-  const handleJoystickMove = (x, y) => {
-    const playerModel = playerModelRef.current;
-    if (playerModel) {
-      const moveSpeed = 0.1;
-      const direction = new THREE.Vector3(x, 0, -y).multiplyScalar(moveSpeed); // Invert y for correct movement
-      const newPosition = playerModel.position.clone().add(direction);
-
-      // Check for collisions before moving the player
-      if (!checkCollision(newPosition)) {
-        playerModel.position.copy(newPosition);
-      }
-    }
-  };
-    
-    
+    // Handle joystick movement
+    const handleJoystickMove = (x, y) => 
+      {
+        const playerModel = playerModelRef.current;
+        if (playerModel) 
+          {
+            const moveSpeed = 0.1;
+            const direction = new THREE.Vector3(x, 0, -y).multiplyScalar(moveSpeed); // Invert y for correct movement
+            const newPosition = playerModel.position.clone().add(direction);
+            // Check for collisions before moving the player
+            if (!checkCollision(newPosition)) 
+              {
+                playerModel.position.copy(newPosition);
+              }
+          }
+      };
     const audioRef = useRef(null); // Ref to store the audio object
     const guidRobotRef = useRef(null); // Ref to store the guid_robot model
     const [isGuidRobotVisible, setIsGuidRobotVisible] = useState(false); // State to track visibility
-
     const [audio, setAudio] = useState(null); // State to hold the audio object
     // Add the audio initialization useEffect here
     useEffect(() => 
@@ -70,18 +71,15 @@ const GameScene = () =>
         const sound = new Audio('/models/voice/Intro_guide_robot.mp4');
         sound.preload = 'auto';
         sound.volume = 1.0;
-    
         sound.addEventListener('canplaythrough', () => 
           {
             console.log('Audio is ready to play!');
             audioRef.current = sound; // Store the audio object in a ref
           });
-    
         sound.addEventListener('error', (error) => 
           {
             console.error('Error loading audio:', error);
           });
-    
         return () => 
           {
             if (sound)
@@ -92,24 +90,20 @@ const GameScene = () =>
               }
           };
       }, []);
-
     useEffect(() => 
       {
         const sound = new Audio('/models/voice/Intro02_guide_robot.mp4');
         sound.preload = 'auto';
         sound.volume = 1.0;
-    
         sound.addEventListener('canplaythrough', () => 
           {
             console.log('Second audio is ready to play!');
             audioRef2.current = sound; // Store the audio object in a ref
           });
-  
         sound.addEventListener('error', (error) => 
           {
             console.error('Error loading second audio:', error);
           });
-    
         return () => 
           {
             if (sound) 
@@ -120,7 +114,6 @@ const GameScene = () =>
               }
           };
       }, []);
-
     useEffect(() => 
       {
         const sound = new Audio('/models/voice/Intro03_guide_robot.mp4');
@@ -363,32 +356,33 @@ const GameScene = () =>
               {
                 requestAnimationFrame(animateRise);
               } else {
-        console.log('Second screen has fully risen!');
-        hasScreen02Risen.current = true;
+                  console.log('Second screen has fully risen!');
+                  hasScreen02Risen.current = true;
 
-        // Show the download button after the screen has risen
-        const downloadButtonModel = downloadButtonModelRef.current;
-        if (downloadButtonModel) {
-          downloadButtonModel.visible = true; // Make the button visible
-          console.log('Download button is now visible');
-        }
+                // Show the download button after the screen has risen
+              const downloadButtonModel = downloadButtonModelRef.current;
+              if (downloadButtonModel) 
+                {
+                  downloadButtonModel.visible = true; // Make the button visible
+                  console.log('Download button is now visible');
+                }
+              // Check if both screens have risen
+              if (hasScreenRisen.current && hasScreen02Risen.current) 
+                {
+                  showDownloadButton();
+                }
+              // Check if both screens have risen
+              if (hasScreenRisen.current && hasScreen02Risen.current) 
+                {
+                  moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
+                }
+            }
+          };
+          animateRise();
+      };
 
-        // Check if both screens have risen
-        if (hasScreenRisen.current && hasScreen02Risen.current) {
-          showDownloadButton();
-        }
-        // Check if both screens have risen
-      if (hasScreenRisen.current && hasScreen02Risen.current) {
-        moveGuidRobotToDownloadButton(); // Move the guid_robot to the download button
-      }
-      }
-    };
 
-    animateRise();
-  };
-
-
-  const moveGuidRobotToDownloadButton = () => {
+    const moveGuidRobotToDownloadButton = () => {
     const guidRobotModel = guidRobotRef.current;
     if (!guidRobotModel) return;
   
